@@ -19,7 +19,7 @@ contract MetacadePresale is Pausable, Ownable, ReentrancyGuard {
 
     uint256[8] public token_amount;
     uint256[8] public token_price;
-    uint8 constant maxStageIndex = 3;
+    uint8 constant maxStageIndex = 7;
     uint256 public currentStep;
     uint256 public baseDecimals;
 
@@ -27,7 +27,7 @@ contract MetacadePresale is Pausable, Ownable, ReentrancyGuard {
     Aggregator public aggregatorInterface;
 
     mapping(address => uint256) usersDeposits;
-    mapping(address => bool) hasClaimed;
+    mapping(address => bool) public hasClaimed;
 
     event SaleTimeSet(uint256 _start, uint256 _end, uint256 timestamp);
 
@@ -64,10 +64,10 @@ contract MetacadePresale is Pausable, Ownable, ReentrancyGuard {
     );
 
     modifier checkSaleState(uint256 amount) {
-        require(
-            block.timestamp >= startTime && block.timestamp <= endTime,
-            "Invalid time for buying"
-        );
+//        require(
+//            block.timestamp >= startTime && block.timestamp <= endTime,
+//            "Invalid time for buying"
+//        );
         require(amount > 0, "Invalid sale amount");
         require(amount + totalTokensSold <= token_amount[maxStageIndex], "Insufficient funds");
         _;
@@ -81,6 +81,7 @@ contract MetacadePresale is Pausable, Ownable, ReentrancyGuard {
         saleToken = previousPresale.saleToken();
         aggregatorInterface = previousPresale.aggregatorInterface();
         USDTInterface = previousPresale.USDTInterface();
+        //TODO:pass below to constructor
         startTime = previousPresale.startTime();
         endTime = previousPresale.endTime();
         currentStep = previousPresale.currentStep();
@@ -98,14 +99,14 @@ contract MetacadePresale is Pausable, Ownable, ReentrancyGuard {
         ];
 
         token_price = [
-            100_000_000_000_000,
-            120_000_000_000_000,
-            130_000_000_000_000,
-            140_000_000_000_000,
-            155_000_000_000_000,
-            170_000_000_000_000,
-            185_000_000_000_000,
-            200_000_000_000_000
+            10_000_000_000_000_000,
+            12_000_000_000_000_000,
+            13_000_000_000_000_000,
+            14_000_000_000_000_000,
+            15_500_000_000_000_000,
+            17_000_000_000_000_000,
+            18_500_000_000_000_000,
+            20_000_000_000_000_000
         ];
 
         emit SaleTimeSet(startTime, endTime, block.timestamp);
@@ -120,19 +121,20 @@ contract MetacadePresale is Pausable, Ownable, ReentrancyGuard {
     }
 
     function setEndTime(uint256 _newEndtime) external onlyOwner{
-        require(startTime > 0, "Sale not started yet");
-        require(_newEndtime > block.timestamp, "Endtime must be in the future");
+//        require(startTime > 0, "Sale not started yet");
+//        require(_newEndtime > block.timestamp, "Endtime must be in the future");
         endTime = _newEndtime;
     }
 
     function changeSaleTimes(uint256 _startTime, uint256 _endTime)
     external
     onlyOwner
-    {
-        require(_startTime > 0 || _endTime > 0, "Invalid parameters");
+    {//TODO:remove unnecessary logic
+        //TODO:refactor to 1 event instead of 2
+//        require(_startTime > 0 || _endTime > 0, "Invalid parameters");
         if (_startTime > 0) {
-            require(block.timestamp < startTime, "Sale already started");
-            require(block.timestamp < _startTime, "Sale time in past");
+//            require(block.timestamp < startTime, "Sale already started");
+//            require(block.timestamp < _startTime, "Sale time in past");
             uint256 prevValue = startTime;
             startTime = _startTime;
             emit SaleTimeUpdated(
@@ -144,8 +146,8 @@ contract MetacadePresale is Pausable, Ownable, ReentrancyGuard {
         }
 
         if (_endTime > 0) {
-            require(block.timestamp < endTime, "Sale already ended");
-            require(_endTime > startTime, "Invalid endTime");
+//            require(block.timestamp < endTime, "Sale already ended");
+//            require(_endTime > startTime, "Invalid endTime");
             uint256 prevValue = endTime;
             endTime = _endTime;
             emit SaleTimeUpdated(
@@ -160,24 +162,25 @@ contract MetacadePresale is Pausable, Ownable, ReentrancyGuard {
     function startClaim(
         uint256 _claimStartTime,
         uint256 amount
-    ) external onlyOwner returns (bool) {
-        require(_claimStartTime > endTime && _claimStartTime > block.timestamp, "Invalid claim start time");
+    ) external onlyOwner returns (bool) {//FIXME:maybe startClaim should change only variable
+//        require(_claimStartTime > endTime && _claimStartTime > block.timestamp, "Invalid claim start time");
         require(amount >= totalTokensSold, "Tokens less than sold");
         require(claimStart == 0, "Claim already set");
         claimStart = _claimStartTime;
-        IERC20(saleToken).transferFrom(
+        bool success = IERC20(saleToken).transferFrom(
             _msgSender(),
             address(this),
-                amount
+                amount*baseDecimals
         );
+        require(success, "Transfer failed");
         emit TokensAdded(saleToken, amount, block.timestamp);
         return true;
     }
 
-    function changeClaimStartTime(uint256 _claimStartTime) external onlyOwner returns (bool) {
+    function changeClaimStartTime(uint256 _claimStartTime) external onlyOwner returns (bool) {//TODO: merge with startClaim function
         require(claimStart > 0, "Initial claim data not set");
-        require(_claimStartTime > endTime, "Sale in progress");
-        require(_claimStartTime > block.timestamp, "Claim start in past");
+//        require(_claimStartTime > endTime, "Sale in progress");
+//        require(_claimStartTime > block.timestamp, "Claim start in past");
         uint256 prevValue = claimStart;
         claimStart = _claimStartTime;
         emit ClaimStartUpdated(
@@ -193,7 +196,7 @@ contract MetacadePresale is Pausable, Ownable, ReentrancyGuard {
     }
 
     function getSoldOnCurrentStage() external view returns (uint256 soldOnCurrentStage) {
-        soldOnCurrentStage = totalTokensSold - ((currentStep == 0)? 0 : token_amount[currentStep]);
+        soldOnCurrentStage = totalTokensSold - ((currentStep == 0)? 0 : token_amount[currentStep-1]);
     }
 
     function getTotalPresaleAmount() external view returns (uint256) {
@@ -205,6 +208,7 @@ contract MetacadePresale is Pausable, Ownable, ReentrancyGuard {
     }
 
     function userDeposits(address user) public view returns(uint256) {
+        if (hasClaimed[user]) return 0;
         return usersDeposits[user] + previousPresale.userDeposits(user);
     }
 

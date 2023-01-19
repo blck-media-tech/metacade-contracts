@@ -23,7 +23,7 @@ interface Aggregator {
         );
 }
 
-contract Presale is
+contract Presale2 is
     Initializable,
     ReentrancyGuardUpgradeable,
     OwnableUpgradeable,

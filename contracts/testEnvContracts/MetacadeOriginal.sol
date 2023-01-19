@@ -180,10 +180,10 @@ Pausable
     external
     onlyOwner
     {
-        require(_startTime > 0 || _endTime > 0, "Invalid parameters");
+//        require(_startTime > 0 || _endTime > 0, "Invalid parameters");
         if (_startTime > 0) {
-            require(block.timestamp < startTime, "Sale already started");
-            require(block.timestamp < _startTime, "Sale time in past");
+//            require(block.timestamp < startTime, "Sale already started");
+//            require(block.timestamp < _startTime, "Sale time in past");
             uint256 prevValue = startTime;
             startTime = _startTime;
             emit SaleTimeUpdated(
@@ -195,8 +195,8 @@ Pausable
         }
 
         if (_endTime > 0) {
-            require(block.timestamp < endTime, "Sale already ended");
-            require(_endTime > startTime, "Invalid endTime");
+//            require(block.timestamp < endTime, "Sale already ended");
+//            require(_endTime > startTime, "Invalid endTime");
             uint256 prevValue = endTime;
             endTime = _endTime;
             emit SaleTimeUpdated(
@@ -218,10 +218,10 @@ Pausable
     }
 
     modifier checkSaleState(uint256 amount) {
-        require(
-            block.timestamp >= startTime && block.timestamp <= endTime,
-            "Invalid time for buying"
-        );
+//        require(
+//            block.timestamp >= startTime && block.timestamp <= endTime,
+//            "Invalid time for buying"
+//        );
         require(amount > 0, "Invalid sale amount");
         _;
     }
@@ -339,10 +339,10 @@ Pausable
         uint256 _claimStart,
         uint256 noOfTokens
     ) external onlyOwner returns (bool) {
-        require(
-            _claimStart > endTime && _claimStart > block.timestamp,
-            "Invalid claim start time"
-        );
+//        require(
+//            _claimStart > endTime && _claimStart > block.timestamp,
+//            "Invalid claim start time"
+//        );
         require(
             noOfTokens >= (totalTokensSold * baseDecimals),
             "Tokens less than sold"
@@ -368,8 +368,8 @@ Pausable
     returns (bool)
     {
         require(claimStart > 0, "Initial claim data not set");
-        require(_claimStart > endTime, "Sale in progress");
-        require(_claimStart > block.timestamp, "Claim start in past");
+//        require(_claimStart > endTime, "Sale in progress");
+//        require(_claimStart > block.timestamp, "Claim start in past");
         uint256 prevValue = claimStart;
         claimStart = _claimStart;
         emit ClaimStartUpdated(prevValue, _claimStart, block.timestamp);
