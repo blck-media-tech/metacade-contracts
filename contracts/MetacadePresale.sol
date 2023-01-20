@@ -67,8 +67,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         uint256[9] memory _token_amount,
         uint256[9] memory _token_price,
         uint256 _startTime,
-        uint256 _endTime,
-        uint256 _currentStep
+        uint256 _endTime
     ) {
         previousPresale = MetacadeOriginal(_previousPresale);
         betaPresale = MetacadeOriginal(_betaPresale);
@@ -78,9 +77,9 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         USDTInterface = IERC20(_USDTInterface);
         token_amount = _token_amount;
         token_price = _token_price;
-        token_amount = _token_amount;
-        token_price = _token_price;
-        currentStep = _currentStep;
+        startTime = _startTime;
+        endTime = _endTime;
+        currentStep = _getStageByTotalSoldAmount();
 
         emit SaleTimeSet(startTime, endTime, block.timestamp);
     }

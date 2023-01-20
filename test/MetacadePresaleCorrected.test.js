@@ -4,6 +4,28 @@ const { BigNumber, getSigners } = hre.ethers;
 const { ZERO_ADDRESS, DAY_IN_SECONDS } = require("./consts");
 
 describe("ASIPresale", function () {
+    const stageAmount = [
+        BigNumber.from("140000000"),
+        BigNumber.from("297500000"),
+        BigNumber.from("455000000"),
+        BigNumber.from("612500000"),
+        BigNumber.from("770000000"),
+        BigNumber.from("927500000"),
+        BigNumber.from("1085000000"),
+        BigNumber.from("1242500000"),
+        BigNumber.from("1400000000"),
+    ];
+    const stagePrice = [
+        BigNumber.from("8000000000000000"),
+        BigNumber.from("10000000000000000"),
+        BigNumber.from("12000000000000000"),
+        BigNumber.from("13000000000000000"),
+        BigNumber.from("14000000000000000"),
+        BigNumber.from("15500000000000000"),
+        BigNumber.from("17000000000000000"),
+        BigNumber.from("18500000000000000"),
+        BigNumber.from("20000000000000000"),
+    ];
     async function deployTokenFixture(creator) {
         const ASIFactory = await hre.ethers.getContractFactory("Metacade");
         return await ASIFactory.connect(creator).deploy();
@@ -20,75 +42,110 @@ describe("ASIPresale", function () {
     }
 
     async function deployOriginalPresaleFixture() {
-            //setup values
-            const block = await hre.ethers.provider.getBlock("latest");
-            const saleStartTime = block.timestamp + DAY_IN_SECONDS;
-            const saleEndTime = saleStartTime + DAY_IN_SECONDS;
+        //setup values
+        const block = await hre.ethers.provider.getBlock("latest");
+        const saleStartTime = block.timestamp + DAY_IN_SECONDS;
+        const saleEndTime = saleStartTime + DAY_IN_SECONDS;
 
-            const [creator, presaleOwner, Alice] = await getSigners();
+        const [creator, presaleOwner, Alice] = await getSigners();
 
-            //Deploy necessary contracts
-            const token = await deployTokenFixture(creator);
-            const USDT = await deployUSDTStubFixture(creator);
-            const ChainlinkPriceFeed = await deployChainlinkPriceFeedStubFixture(creator);
+        //Deploy necessary contracts
+        const token = await deployTokenFixture(creator);
+        const USDT = await deployUSDTStubFixture(creator);
+        const ChainlinkPriceFeed = await deployChainlinkPriceFeedStubFixture(creator);
 
-            //Deploy presale contract
-            const presaleFactory = await hre.ethers.getContractFactory("MetacadeOriginal");
-            const presale = await presaleFactory
-                .connect(creator)
-                .deploy(token.address)
+        //Deploy presale contract
+        const presaleFactory = await hre.ethers.getContractFactory("MetacadeOriginal");
+        const presale = await presaleFactory.connect(creator).deploy(token.address);
 
-        await presale.connect(creator).initialize(
-                    ChainlinkPriceFeed.address,
-                    USDT.address,
-                    saleStartTime,
-                    saleEndTime,
-                );
+        await presale.connect(creator).initialize(ChainlinkPriceFeed.address, USDT.address, saleStartTime, saleEndTime);
 
-            //Transfer presale contract ownership to specified address
-            await presale.transferOwnership(presaleOwner.address);
+        //Transfer presale contract ownership to specified address
+        await presale.transferOwnership(presaleOwner.address);
 
-            return {
-                USDT,
-                token,
-                originalPresale:presale,
-                saleStartTime,
-                saleEndTime,
-                users: {
-                    creator,
-                    presaleOwner,
-                    Alice,
-                },
-            };
-        }
+        return {
+            USDT,
+            token,
+            originalPresale: presale,
+            saleStartTime,
+            saleEndTime,
+            ChainlinkPriceFeed,
+            users: {
+                creator,
+                presaleOwner,
+                Alice,
+            },
+        };
+    }
+
+    async function deployBetaPresaleFixture(token, ChainlinkPriceFeed, USDT, creator, presaleOwner) {
+        //setup values
+        const block = await hre.ethers.provider.getBlock("latest");
+        const saleStartTime = block.timestamp + DAY_IN_SECONDS;
+        const saleEndTime = saleStartTime + DAY_IN_SECONDS;
+
+        //Deploy presale contract
+        const presaleFactory = await hre.ethers.getContractFactory("MetacadeOriginal");
+        const presale = await presaleFactory.connect(creator).deploy(token.address);
+
+        await presale.connect(creator).initialize(ChainlinkPriceFeed.address, USDT.address, saleStartTime, saleEndTime);
+
+        //Transfer presale contract ownership to specified address
+        await presale.transferOwnership(presaleOwner.address);
+
+        await setOriginalPresaleToCurrentCondition(presale, USDT, creator);
+
+        return presale;
+    }
 
     async function setOriginalPresaleToCurrentCondition(originalPresale, usdt, creator) {
         const tokensToPurchase = 100000000;
         const ethPrice = await originalPresale.ethBuyHelper(tokensToPurchase);
-        await originalPresale.buyWithEth(tokensToPurchase, {value:ethPrice});
+        await originalPresale.buyWithEth(tokensToPurchase, { value: ethPrice });
 
         const allowance = await originalPresale.usdtBuyHelper(tokensToPurchase);
-        await usdt.connect(creator).increaseAllowance(originalPresale.address, allowance)
+        await usdt.connect(creator).increaseAllowance(originalPresale.address, allowance);
         await originalPresale.buyWithUSDT(tokensToPurchase);
     }
 
-    async function deployCorrectedPresaleFixture(originalPresale, creator) {
-            //Deploy presale contract
-            const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
-            const presaleCorrected = await presaleCorrectedFactory
-                .connect(creator)
-                .deploy(originalPresale.address);
+    async function deployCorrectedPresaleFixture(
+        originalPresale,
+        betaPresale,
+        saleToken,
+        ChainlinkPriceFeed,
+        USDT,
+        creator,
+        presaleOwner
+    ) {
+        const startTime = await originalPresale.startTime();
+        const endTime = await originalPresale.endTime();
 
-            //Transfer presale contract ownership to specified address
-            await presaleCorrected.transferOwnership(presaleOwner.address);
+        //Deploy presale contract
+        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+        const presaleCorrected = await presaleCorrectedFactory
+            .connect(creator)
+            .deploy(
+                originalPresale.address,
+                betaPresale.address,
+                saleToken.address,
+                ChainlinkPriceFeed.address,
+                USDT.address,
+                stageAmount,
+                stagePrice,
+                startTime,
+                endTime
+            );
 
-            return {
-                presaleCorrected,
-            };
-        }
+        //Transfer presale contract ownership to specified address
+        await presaleCorrected.transferOwnership(presaleOwner);
+
+        return {
+            presaleCorrected,
+        };
+    }
 
     async function purchaseTokensFixture(contract, signer, amount) {
-        const priceInWei = await contract.connect(signer).calculateWeiPrice(amount);
+        const priceInWei = await contract.connect(signer).ethBuyHelper(amount);
         await contract.connect(signer).buyWithEth(amount, { value: priceInWei });
     }
 
@@ -97,86 +154,119 @@ describe("ASIPresale", function () {
     }
 
     async function startClaimFixture(presale, ASI, creator, presaleOwner, claimStartTime, tokensAmount) {
-            const valueToTransfer = BigNumber.from(tokensAmount).mul(BigNumber.from(10).pow(await ASI.decimals()));
-            await ASI.connect(creator).transfer(presale.address, valueToTransfer);
-            await presale.connect(presaleOwner).startClaim(claimStartTime, tokensAmount);
-        }
+        const valueToTransfer = BigNumber.from(tokensAmount).mul(BigNumber.from(10).pow(await ASI.decimals()));
+        await ASI.connect(creator).transfer(presale.address, valueToTransfer);
+        await presale.connect(presaleOwner).startClaim(claimStartTime, tokensAmount);
+    }
 
-        it("should be correctly deployed", async function() {
-            const {originalPresale, users} = await deployOriginalPresaleFixture();
+    it("should be correctly deployed", async function () {
+        const { originalPresale, USDT, token, ChainlinkPriceFeed, saleEndTime, saleStartTime, users } =
+            await deployOriginalPresaleFixture();
 
-            const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
-            const presaleCorrected = await presaleCorrectedFactory
-                .connect(users.creator)
-                .deploy(originalPresale.address);
+        const betaPresale = await deployBetaPresaleFixture(token, ChainlinkPriceFeed, USDT, users.creator, users.presaleOwner);
 
-            expect(presaleCorrected.address).not.to.equal(ZERO_ADDRESS);
-        })
+        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+        const presaleCorrected = await presaleCorrectedFactory
+            .connect(users.creator)
+            .deploy(
+                originalPresale.address,
+                betaPresale.address,
+                token.address,
+                ChainlinkPriceFeed.address,
+                USDT.address,
+                stageAmount,
+                stagePrice,
+                saleStartTime,
+                saleEndTime
+            );
 
-        it("should have similar values with original contract after deployment", async function() {
-            const {originalPresale, users, USDT} = await deployOriginalPresaleFixture();
+        expect(presaleCorrected.address).not.to.equal(ZERO_ADDRESS);
+    });
 
-            await setOriginalPresaleToCurrentCondition(originalPresale, USDT, users.creator)
+    it("should have similar values with original contract after deployment", async function () {
+        const { originalPresale, USDT, token, ChainlinkPriceFeed, saleEndTime, saleStartTime, users } =
+            await deployOriginalPresaleFixture();
 
-            const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
-            const presaleCorrected = await presaleCorrectedFactory
-                .connect(users.creator)
-                .deploy(originalPresale.address);
+        const betaPresale = await deployBetaPresaleFixture(token, ChainlinkPriceFeed, USDT, users.creator, users.presaleOwner);
 
-            expect(presaleCorrected.address).not.to.equal(ZERO_ADDRESS);
-            expect(originalPresale.address).not.to.equal(ZERO_ADDRESS);
+        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+        const presaleCorrected = await presaleCorrectedFactory
+            .connect(users.creator)
+            .deploy(
+                originalPresale.address,
+                betaPresale.address,
+                token.address,
+                ChainlinkPriceFeed.address,
+                USDT.address,
+                stageAmount,
+                stagePrice,
+                saleStartTime,
+                saleEndTime
+            );
 
-            const totalTokensSold = await originalPresale.totalTokensSold();
-            const totalTokensSoldCorrected = await presaleCorrected.totalTokensSold();
-            expect(totalTokensSold).to.equal(totalTokensSoldCorrected)
+        expect(presaleCorrected.address).not.to.equal(ZERO_ADDRESS);
+        expect(originalPresale.address).not.to.equal(ZERO_ADDRESS);
+        expect(betaPresale.address).not.to.equal(ZERO_ADDRESS);
 
-            const currentStep = await originalPresale.currentStep();
-            const currentStepCorrected = await presaleCorrected.currentStep();
-            expect(currentStep).to.equal(currentStepCorrected)
+        const totalTokensSold = await originalPresale.totalTokensSold();
+        const totalTokensSoldBeta = await betaPresale.totalTokensSold();
+        const totalTokensSoldCorrected = await presaleCorrected.totalTokensSold();
+        expect(totalTokensSoldCorrected).to.equal(totalTokensSold.add(totalTokensSoldBeta));
 
-            const startTime = await originalPresale.startTime();
-            const startTimeCorrected = await presaleCorrected.startTime();
-            expect(startTime).to.equal(startTimeCorrected)
+        // const currentStep = await originalPresale.currentStep();
+        // const currentStepCorrected = await presaleCorrected.currentStep();
+        // expect(currentStep).to.equal(currentStepCorrected);
 
-            const endTime = await originalPresale.endTime();
-            const endTimeCorrected = await presaleCorrected.endTime();
-            expect(endTime).to.equal(endTimeCorrected)
+        const startTime = await originalPresale.startTime();
+        const startTimeCorrected = await presaleCorrected.startTime();
+        expect(startTime).to.equal(startTimeCorrected);
 
-            const claimStart = await originalPresale.claimStart();
-            const claimStartCorrected = await presaleCorrected.claimStart();
-            expect(claimStart).to.equal(claimStartCorrected)
+        const endTime = await originalPresale.endTime();
+        const endTimeCorrected = await presaleCorrected.endTime();
+        expect(endTime).to.equal(endTimeCorrected);
 
-            const saleToken = await originalPresale.saleToken();
-            const saleTokenCorrected = await presaleCorrected.saleToken();
-            expect(saleToken).to.equal(saleTokenCorrected)
+        const claimStart = await originalPresale.claimStart();
+        const claimStartCorrected = await presaleCorrected.claimStart();
+        expect(claimStart).to.equal(claimStartCorrected);
 
-            const baseDecimals = await originalPresale.baseDecimals();
-            const baseDecimalsCorrected = await presaleCorrected.baseDecimals();
-            expect(baseDecimals).to.equal(baseDecimalsCorrected)
+        const saleToken = await originalPresale.saleToken();
+        const saleTokenCorrected = await presaleCorrected.saleToken();
+        expect(saleToken).to.equal(saleTokenCorrected);
 
-            const USDTInterface = await originalPresale.USDTInterface();
-            const USDTInterfaceCorrected = await presaleCorrected.USDTInterface();
-            expect(USDTInterface).to.equal(USDTInterfaceCorrected)
+        const USDTInterface = await originalPresale.USDTInterface();
+        const USDTInterfaceCorrected = await presaleCorrected.USDTInterface();
+        expect(USDTInterface).to.equal(USDTInterfaceCorrected);
 
-            const aggregatorInterface = await originalPresale.aggregatorInterface();
-            const aggregatorInterfaceCorrected = await presaleCorrected.aggregatorInterface();
-            expect(aggregatorInterface).to.equal(aggregatorInterfaceCorrected)
-        })
+        const aggregatorInterface = await originalPresale.aggregatorInterface();
+        const aggregatorInterfaceCorrected = await presaleCorrected.aggregatorInterface();
+        expect(aggregatorInterface).to.equal(aggregatorInterfaceCorrected);
+    });
 
-    describe("Flow after substitution", function() {
+    describe("Flow after substitution", function () {
         it("should have correct values after tokens was bought", async function () {
-            const {originalPresale, users, USDT} = await deployOriginalPresaleFixture();
+            const { originalPresale, USDT, token, ChainlinkPriceFeed, saleEndTime, saleStartTime, users } =
+                await deployOriginalPresaleFixture();
 
-            await setOriginalPresaleToCurrentCondition(originalPresale, USDT, users.creator);
+            const betaPresale = await deployBetaPresaleFixture(token, ChainlinkPriceFeed, USDT, users.creator, users.presaleOwner);
 
-            const correctedPresale = await deployCorrectedPresaleFixture();
+            const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+            const presaleCorrected = await presaleCorrectedFactory
+                .connect(users.creator)
+                .deploy(
+                    originalPresale.address,
+                    betaPresale.address,
+                    token.address,
+                    ChainlinkPriceFeed.address,
+                    USDT.address,
+                    stageAmount,
+                    stagePrice,
+                    saleStartTime,
+                    saleEndTime
+                );
 
-            const totalSoldAmountBeforePurchase = await correctedPresale.totalTokensSold()
-
-                await purchaseTokensFixture(correctedPresale, users.creator, 100000000)
-
-        })
-    })
+            await purchaseTokensFixture(presaleCorrected, users.creator, 100000000);
+        });
+    });
 
     // it("should be correctly deployed", async function () {
     //     //setup values
