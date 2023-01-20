@@ -28,35 +28,18 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
     Aggregator public aggregatorInterface;
 
     mapping(address => uint256) usersDeposits;
-    mapping(address => bool) public hasClaimed;//TODO:change bool to smth more effective
-    mapping(address => bool) public blacklist;//TODO:-//-
+    mapping(address => bool) public hasClaimed;
+    mapping(address => bool) public blacklist;
 
     modifier checkSaleState(uint256 amount) {
-//        require(
-//            block.timestamp >= startTime && block.timestamp <= endTime,
-//            "Invalid time for buying"
-//        );
+        require(
+            block.timestamp >= startTime && block.timestamp <= endTime,
+            "Invalid time for buying"
+        );
         require(amount > 0, "Invalid sale amount");
         require(amount + totalTokensSold <= token_amount[maxStageIndex], "Insufficient funds");
         _;
     }
-
-//    function configure(
-//        address _aggregatorInterface,
-//        address _USDTInterface,
-//        uint256[9] _token_amount,
-//        uint256[9] _token_price,
-//        uint256 _startTime,
-//        uint256 _endTime,
-//        uint256 _currentStep
-//    //TODO: think about ability to block configuration
-//    ) {
-//        aggregatorInterface = _aggregatorInterface;
-//        USDTInterface = _USDTInterface;
-//        token_amount = _token_amount;
-//        token_price = _token_price;
-//        currentStep = _currentStep;
-//    }
 
     constructor(
         address _previousPresale,
@@ -69,6 +52,13 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         uint256 _startTime,
         uint256 _endTime
     ) {
+        require(_aggregatorInterface != address(0), "Zero aggregator address");
+        require(_USDTInterface != address(0), "Zero USDT address");
+        require(_saleToken != address(0), "Zero sale token address");
+        require(
+            _endTime > _startTime,
+            "Invalid time"
+        );
         previousPresale = MetacadeOriginal(_previousPresale);
         betaPresale = MetacadeOriginal(_betaPresale);
         totalTokensSold = previousPresale.totalTokensSold() + betaPresale.totalTokensSold();
@@ -93,8 +83,8 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
     }
 
     function setEndTime(uint256 _newEndtime) external onlyOwner{
-//        require(startTime > 0, "Sale not started yet");
-//        require(_newEndtime > block.timestamp, "Endtime must be in the future");
+        require(startTime > 0, "Sale not started yet");
+        require(_newEndtime > block.timestamp, "Endtime must be in the future");
         endTime = _newEndtime;
     }
 
@@ -102,12 +92,12 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
     external
     onlyOwner
     {
-//            require(block.timestamp < startTime, "Sale already started");
-//            require(block.timestamp < _startTime, "Sale time in past");
+            require(block.timestamp < startTime, "Sale already started");
+            require(block.timestamp < _startTime, "Sale time in past");
             if (startTime != _startTime) startTime = _startTime;
 
-//            require(block.timestamp < endTime, "Sale already ended");
-//            require(_endTime > startTime, "Invalid endTime");
+            require(block.timestamp < endTime, "Sale already ended");
+            require(_endTime > startTime, "Invalid endTime");
             if (endTime != _endTime) endTime = _endTime;
             emit SaleTimeSet(
                 _startTime,
@@ -120,7 +110,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         uint256 _claimStartTime,
         uint256 amount
     ) external onlyOwner returns (bool) {
-//        require(_claimStartTime > endTime && _claimStartTime > block.timestamp, "Invalid claim start time");
+        require(_claimStartTime > endTime && _claimStartTime > block.timestamp, "Invalid claim start time");
         require(amount >= totalTokensSold, "Tokens less than sold");
         require(IERC20(saleToken).balanceOf(address(this)) >= amount * 1e18, "Not enough balance");
         claimStart = _claimStartTime;
@@ -205,7 +195,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         require(!hasClaimed[_msgSender()], "Already claimed");
         uint256 amount = userDeposits(_msgSender());
         require(amount > 0, "Nothing to claim");
-        hasClaimed[_msgSender()] = true;//TODO: change boolean to uint
+        hasClaimed[_msgSender()] = true;
         bool success = IERC20(saleToken).transfer(_msgSender(), amount);
         require(success, "Transfer failed");
         emit TokensClaimed(_msgSender(), amount, block.timestamp);
