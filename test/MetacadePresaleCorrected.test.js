@@ -26,6 +26,14 @@ describe("ASIPresale", function () {
         BigNumber.from("18500000000000000"),
         BigNumber.from("20000000000000000"),
     ];
+
+    function calculateCurrentStepFixture(totalSoldAmount) {
+        if (totalSoldAmount<stageAmount[0]) return 0
+        for (let i = 1; i<stageAmount.length; i++) {
+             if (totalSoldAmount<stageAmount[i]) return i
+        }
+    }
+
     async function deployTokenFixture(creator) {
         const ASIFactory = await hre.ethers.getContractFactory("Metacade");
         return await ASIFactory.connect(creator).deploy();
@@ -139,9 +147,7 @@ describe("ASIPresale", function () {
         //Transfer presale contract ownership to specified address
         await presaleCorrected.transferOwnership(presaleOwner);
 
-        return {
-            presaleCorrected,
-        };
+        return {presaleCorrected};
     }
 
     async function purchaseTokensFixture(contract, signer, amount) {
@@ -153,10 +159,11 @@ describe("ASIPresale", function () {
         await hre.network.provider.send("evm_setNextBlockTimestamp", [targetTime]);
     }
 
-    async function startClaimFixture(presale, ASI, creator, presaleOwner, claimStartTime, tokensAmount) {
-        const valueToTransfer = BigNumber.from(tokensAmount).mul(BigNumber.from(10).pow(await ASI.decimals()));
-        await ASI.connect(creator).transfer(presale.address, valueToTransfer);
-        await presale.connect(presaleOwner).startClaim(claimStartTime, tokensAmount);
+    async function startClaimFixture(presale, token, creator, presaleOwner, claimStartTime) {
+        const tokensAmount = await presale.totalTokensSold()
+        const valueToTransfer = BigNumber.from(tokensAmount).mul(BigNumber.from(10).pow(await token.decimals()));
+        await token.connect(creator).transfer(presale.address, valueToTransfer);
+        await presale.connect(presaleOwner).configureClaim(claimStartTime, tokensAmount);
     }
 
     it("should be correctly deployed", async function () {
@@ -213,9 +220,9 @@ describe("ASIPresale", function () {
         const totalTokensSoldCorrected = await presaleCorrected.totalTokensSold();
         expect(totalTokensSoldCorrected).to.equal(totalTokensSold.add(totalTokensSoldBeta));
 
-        // const currentStep = await originalPresale.currentStep();
-        // const currentStepCorrected = await presaleCorrected.currentStep();
-        // expect(currentStep).to.equal(currentStepCorrected);
+        const currentStep = await calculateCurrentStepFixture(totalTokensSoldCorrected)
+        const currentStepCorrected = await presaleCorrected.currentStep();
+        expect(currentStep).to.equal(currentStepCorrected);
 
         const startTime = await originalPresale.startTime();
         const startTimeCorrected = await presaleCorrected.startTime();
@@ -242,12 +249,18 @@ describe("ASIPresale", function () {
         expect(aggregatorInterface).to.equal(aggregatorInterfaceCorrected);
     });
 
-    describe("Flow after substitution", function () {
+    describe("Edge cases after substitution", function () {
         it("should have correct values after tokens was bought", async function () {
             const { originalPresale, USDT, token, ChainlinkPriceFeed, saleEndTime, saleStartTime, users } =
                 await deployOriginalPresaleFixture();
 
-            const betaPresale = await deployBetaPresaleFixture(token, ChainlinkPriceFeed, USDT, users.creator, users.presaleOwner);
+            const betaPresale = await deployBetaPresaleFixture(
+                token,
+                ChainlinkPriceFeed,
+                USDT,
+                users.creator,
+                users.presaleOwner
+            );
 
             const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
             const presaleCorrected = await presaleCorrectedFactory
@@ -264,7 +277,103 @@ describe("ASIPresale", function () {
                     saleEndTime
                 );
 
-            await purchaseTokensFixture(presaleCorrected, users.creator, 100000000);
+            const tokensToPurchase = 100000000;
+
+            const tokensBeforeTransaction = await presaleCorrected.userDeposits(users.creator.address);
+
+            await purchaseTokensFixture(presaleCorrected, users.creator, tokensToPurchase);
+
+            const totalTokensSold = await presaleCorrected.totalTokensSold();
+            const currentStage = await presaleCorrected.currentStep();
+
+            const tokensAfterTransaction = await presaleCorrected.userDeposits(users.creator.address);
+
+            expect(tokensAfterTransaction).to.equal(tokensBeforeTransaction.add(BigNumber.from(10).pow(18).mul(tokensToPurchase)))
+            expect(currentStage).to.equal(calculateCurrentStepFixture(totalTokensSold))
+        });
+
+        it("should correctly start claim", async function () {
+            const { originalPresale, USDT, token, ChainlinkPriceFeed, users } =
+                await deployOriginalPresaleFixture();
+
+            const betaPresale = await deployBetaPresaleFixture(
+                token,
+                ChainlinkPriceFeed,
+                USDT,
+                users.creator,
+                users.presaleOwner
+            );
+
+            const { presaleCorrected } = await deployCorrectedPresaleFixture(
+                originalPresale,
+                betaPresale,
+                token,
+                ChainlinkPriceFeed,
+                USDT,
+                users.creator,
+                users.presaleOwner.address
+            )
+
+            const totalTokensSold = await presaleCorrected.totalTokensSold();
+
+            const endTime = await presaleCorrected.endTime()
+            const claimStart = endTime.add(60);
+
+            await token
+                .connect(users.creator)
+                .transfer(presaleCorrected.address, BigNumber.from(10).pow(18).mul(totalTokensSold));
+
+            await presaleCorrected.connect(users.presaleOwner).configureClaim(claimStart, totalTokensSold);
+
+            const correctedClaimStart = await presaleCorrected.claimStart();
+
+            expect(claimStart).to.equal(correctedClaimStart);
+        });
+
+        it("should correctly claim tokens", async function () {
+            const { originalPresale, USDT, token, ChainlinkPriceFeed, saleEndTime, saleStartTime, users } =
+                await deployOriginalPresaleFixture();
+
+            const betaPresale = await deployBetaPresaleFixture(
+                token,
+                ChainlinkPriceFeed,
+                USDT,
+                users.creator,
+                users.presaleOwner
+            );
+
+            const { presaleCorrected } = await deployCorrectedPresaleFixture(
+                originalPresale,
+                betaPresale,
+                token,
+                ChainlinkPriceFeed,
+                USDT,
+                users.creator,
+                users.presaleOwner.address
+            )
+
+            const tokensToPurchase = 100000000;
+
+            await purchaseTokensFixture(presaleCorrected, users.creator, tokensToPurchase);
+
+            const claimStartTime = saleEndTime + 60;
+
+            await startClaimFixture(presaleCorrected, token, users.creator, users.presaleOwner, claimStartTime)
+
+            const tokenAmount = await presaleCorrected.userDeposits(users.creator.address)
+
+            await timeTravelFixture(claimStartTime+1);
+
+            const tokenBalanceBeforeClaim = await token.balanceOf(users.creator.address)
+
+            await presaleCorrected.connect(users.creator).claim();
+
+            const tokenBalanceAfterClaim = await token.balanceOf(users.creator.address)
+            const hasClaimed = await presaleCorrected.hasClaimed(users.creator.address);
+
+
+            expect(tokenBalanceAfterClaim).to.equal(tokenBalanceBeforeClaim.add(tokenAmount))
+            expect(hasClaimed).to.equal(true)
         });
     });
 

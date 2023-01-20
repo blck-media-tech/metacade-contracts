@@ -122,7 +122,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
     ) external onlyOwner returns (bool) {
 //        require(_claimStartTime > endTime && _claimStartTime > block.timestamp, "Invalid claim start time");
         require(amount >= totalTokensSold, "Tokens less than sold");
-        require(USDTInterface.balanceOf(address(this)) >= amount * 1e18, "Not enough balance");
+        require(IERC20(saleToken).balanceOf(address(this)) >= amount * 1e18, "Not enough balance");
         claimStart = _claimStartTime;
         return true;
     }

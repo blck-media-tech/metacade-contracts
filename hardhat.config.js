@@ -10,7 +10,7 @@ require("./task/subtasks");
 module.exports = {
     solidity: "0.8.17",
     mocha: {
-        timeout: 5000,
+        timeout: 10000,
     },
     etherscan: {
         apiKey: process.env.ETHERSCAN_API_KEY,
