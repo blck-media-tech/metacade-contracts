@@ -10,25 +10,19 @@ contract Metacade is Ownable, ERC20 {
     using SafeERC20 for IERC20;
 
     constructor() ERC20("Metacade", "MCADE") {
-
         _mint(owner(), 2_000_000_000 * 10**18);
     }
 
-   
-     /**
+    /**
      * @notice Rescue ETH locked up in this contract.
      * @param _to       Recipient address
      */
 
-    function withdrawETH(
-        address _to,
-        uint256 _amount        
-    ) external payable onlyOwner{
+    function withdrawETH(address _to, uint256 _amount) external payable onlyOwner {
         require(_to != address(0), "Zero address");
 
-        (bool sent,) = _to.call{value: _amount}("");
+        (bool sent, ) = _to.call{ value: _amount }("");
         require(sent, "Failed to send Ether");
-        
     }
 
     /**
@@ -41,7 +35,7 @@ contract Metacade is Ownable, ERC20 {
         IERC20 tokenContract,
         address to,
         uint256 amount
-    ) external onlyOwner {        
+    ) external onlyOwner {
         require(to != address(0), "Zero address");
 
         tokenContract.safeTransfer(to, amount);

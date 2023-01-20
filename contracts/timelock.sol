@@ -64,10 +64,7 @@ contract TokenLock is OwnableUpgradeable, IERC20 {
     /// @dev Withdraw tokens after the end of the locking period or during the deposit period
     /// @param amount The amount of tokens to withdraw
     function withdraw(uint256 amount) public {
-        if (
-            block.timestamp > depositDeadline &&
-            block.timestamp < depositDeadline + lockDuration
-        ) {
+        if (block.timestamp > depositDeadline && block.timestamp < depositDeadline + lockDuration) {
             revert LockPeriodOngoing();
         }
         if (balanceOf[msg.sender] < amount) {
@@ -95,12 +92,7 @@ contract TokenLock is OwnableUpgradeable, IERC20 {
     }
 
     /// @dev Lock claim tokens are non-transferrable: ERC-20 allowance is not supported
-    function allowance(address, address)
-        external
-        pure
-        override
-        returns (uint256)
-    {
+    function allowance(address, address) external pure override returns (uint256) {
         revert NotSupported();
     }
 

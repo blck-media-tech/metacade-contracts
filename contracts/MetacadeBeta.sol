@@ -23,12 +23,7 @@ interface Aggregator {
         );
 }
 
-contract Presale2 is
-    Initializable,
-    ReentrancyGuardUpgradeable,
-    OwnableUpgradeable,
-    PausableUpgradeable
-{
+contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgradeable, PausableUpgradeable {
     uint256 public totalTokensSold = 0;
     uint256 public currentStep = 0;
 
