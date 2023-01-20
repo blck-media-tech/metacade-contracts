@@ -23,12 +23,7 @@ interface Aggregator {
         );
 }
 
-contract Presale is
-    Initializable,
-    ReentrancyGuardUpgradeable,
-    OwnableUpgradeable,
-    PausableUpgradeable
-{
+contract Presale is Initializable, ReentrancyGuardUpgradeable, OwnableUpgradeable, PausableUpgradeable {
     uint256 public totalTokensSold = 0;
     uint256 public currentStep = 0;
 
@@ -49,12 +44,7 @@ contract Presale is
 
     event SaleTimeSet(uint256 _start, uint256 _end, uint256 timestamp);
 
-    event SaleTimeUpdated(
-        bytes32 indexed key,
-        uint256 prevValue,
-        uint256 newValue,
-        uint256 timestamp
-    );
+    event SaleTimeUpdated(bytes32 indexed key, uint256 prevValue, uint256 newValue, uint256 timestamp);
 
     event TokensBought(
         address indexed user,
@@ -64,22 +54,10 @@ contract Presale is
         uint256 timestamp
     );
 
-    event TokensAdded(
-        address indexed token,
-        uint256 noOfTokens,
-        uint256 timestamp
-    );
-    event TokensClaimed(
-        address indexed user,
-        uint256 amount,
-        uint256 timestamp
-    );
+    event TokensAdded(address indexed token, uint256 noOfTokens, uint256 timestamp);
+    event TokensClaimed(address indexed user, uint256 amount, uint256 timestamp);
 
-    event ClaimStartUpdated(
-        uint256 prevValue,
-        uint256 newValue,
-        uint256 timestamp
-    );
+    event ClaimStartUpdated(uint256 prevValue, uint256 newValue, uint256 timestamp);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
 
@@ -98,15 +76,12 @@ contract Presale is
     ) external initializer {
         require(_oracle != address(0), "Zero aggregator address");
         require(_usdt != address(0), "Zero USDT address");
-        require(
-            _startTime > block.timestamp && _endTime > _startTime,
-            "Invalid time"
-        );
+        require(_startTime > block.timestamp && _endTime > _startTime, "Invalid time");
         __Pausable_init_unchained();
         __Ownable_init_unchained();
         __ReentrancyGuard_init_unchained();
         baseDecimals = (10**18);
-               
+
         aggregatorInterface = Aggregator(_oracle);
         USDTInterface = IERC20Upgradeable(_usdt);
         startTime = _startTime;
@@ -132,13 +107,9 @@ contract Presale is
      * @dev To calculate the price in USD for given amount of tokens.
      * @param _amount No of tokens
      */
-    function calculatePrice(uint256 _amount)
-        public
-        view
-        returns (uint256)
-    {
+    function calculatePrice(uint256 _amount) public view returns (uint256) {
         uint256 USDTAmount;
-         USDTAmount = _amount * token_price;
+        USDTAmount = _amount * token_price;
         return USDTAmount;
     }
 
@@ -147,22 +118,14 @@ contract Presale is
      * @param _startTime New start time
      * @param _endTime New end time
      */
-    function changeSaleTimes(uint256 _startTime, uint256 _endTime)
-        external
-        onlyOwner
-    {
+    function changeSaleTimes(uint256 _startTime, uint256 _endTime) external onlyOwner {
         require(_startTime > 0 || _endTime > 0, "Invalid parameters");
         if (_startTime > 0) {
             require(block.timestamp < startTime, "Sale already started");
             require(block.timestamp < _startTime, "Sale time in past");
             uint256 prevValue = startTime;
             startTime = _startTime;
-            emit SaleTimeUpdated(
-                bytes32("START"),
-                prevValue,
-                _startTime,
-                block.timestamp
-            );
+            emit SaleTimeUpdated(bytes32("START"), prevValue, _startTime, block.timestamp);
         }
 
         if (_endTime > 0) {
@@ -170,12 +133,7 @@ contract Presale is
             require(_endTime > startTime, "Invalid endTime");
             uint256 prevValue = endTime;
             endTime = _endTime;
-            emit SaleTimeUpdated(
-                bytes32("END"),
-                prevValue,
-                _endTime,
-                block.timestamp
-            );
+            emit SaleTimeUpdated(bytes32("END"), prevValue, _endTime, block.timestamp);
         }
     }
 
@@ -189,10 +147,7 @@ contract Presale is
     }
 
     modifier checkSaleState(uint256 amount) {
-        require(
-            block.timestamp >= startTime && block.timestamp <= endTime,
-            "Invalid time for buying"
-        );
+        require(block.timestamp >= startTime && block.timestamp <= endTime, "Invalid time for buying");
         require(amount > 0, "Invalid sale amount");
         _;
     }
@@ -201,39 +156,20 @@ contract Presale is
      * @dev To buy into a presale using USDT
      * @param amount No of tokens to buy
      */
-    function buyWithUSDT(uint256 amount)
-        external
-        checkSaleState(amount)
-        whenNotPaused
-        returns (bool)
-    {
+    function buyWithUSDT(uint256 amount) external checkSaleState(amount) whenNotPaused returns (bool) {
         require(amount + totalTokensSold <= 140_000_000, "Exceeds Beta Stage");
         uint256 usdPrice = calculatePrice(amount);
         usdPrice = usdPrice / (10**12);
         totalTokensSold += amount;
 
         userDeposits[_msgSender()] += (amount * baseDecimals);
-        uint256 ourAllowance = USDTInterface.allowance(
-            _msgSender(),
-            address(this)
-        );
+        uint256 ourAllowance = USDTInterface.allowance(_msgSender(), address(this));
         require(usdPrice <= ourAllowance, "Make sure to add enough allowance");
         (bool success, ) = address(USDTInterface).call(
-            abi.encodeWithSignature(
-                "transferFrom(address,address,uint256)",
-                _msgSender(),
-                owner(),
-                usdPrice
-            )
+            abi.encodeWithSignature("transferFrom(address,address,uint256)", _msgSender(), owner(), usdPrice)
         );
         require(success, "Token payment failed");
-        emit TokensBought(
-            _msgSender(),
-            amount,
-            address(USDTInterface),
-            usdPrice,
-            block.timestamp
-        );
+        emit TokensBought(_msgSender(), amount, address(USDTInterface), usdPrice, block.timestamp);
         return true;
     }
 
@@ -259,13 +195,7 @@ contract Presale is
         userDeposits[_msgSender()] += (amount * baseDecimals);
         sendValue(payable(owner()), ethAmount);
         if (excess > 0) sendValue(payable(_msgSender()), excess);
-        emit TokensBought(
-            _msgSender(),
-            amount,
-            address(0),
-            ethAmount,
-            block.timestamp
-        );
+        emit TokensBought(_msgSender(), amount, address(0), ethAmount, block.timestamp);
         return true;
     }
 
@@ -273,11 +203,7 @@ contract Presale is
      * @dev Helper function to get ETH price for given amount
      * @param amount No of tokens to buy
      */
-    function ethBuyHelper(uint256 amount)
-        external
-        view
-        returns (uint256 ethAmount)
-    {
+    function ethBuyHelper(uint256 amount) external view returns (uint256 ethAmount) {
         uint256 usdPrice = calculatePrice(amount);
         ethAmount = (usdPrice * baseDecimals) / getLatestPrice();
     }
@@ -286,18 +212,13 @@ contract Presale is
      * @dev Helper function to get USDT price for given amount
      * @param amount No of tokens to buy
      */
-    function usdtBuyHelper(uint256 amount)
-        external
-        view
-        returns (uint256 usdPrice)
-    {
-        usdPrice = calculatePrice(amount);
-        usdPrice = usdPrice / (10**12);
+    function usdtBuyHelper(uint256 amount) external view returns (uint256 usdPrice) {
+        usdPrice = calculatePrice(amount) / (10**12);
     }
 
     function sendValue(address payable recipient, uint256 amount) internal {
         require(address(this).balance >= amount, "Low balance");
-        (bool success, ) = recipient.call{value: amount}("");
+        (bool success, ) = recipient.call{ value: amount }("");
         require(success, "ETH Payment failed");
     }
 
@@ -306,26 +227,13 @@ contract Presale is
      * @param _claimStart claim start time
      * @param noOfTokens no of tokens to add to the contract
      */
-     
-    function startClaim(
-        uint256 _claimStart,
-        uint256 noOfTokens
-    ) external onlyOwner returns (bool) {
-        require(
-            _claimStart > endTime && _claimStart > block.timestamp,
-            "Invalid claim start time"
-        );
-        require(
-            noOfTokens >= (totalTokensSold * baseDecimals),
-            "Tokens less than sold"
-        );
+
+    function startClaim(uint256 _claimStart, uint256 noOfTokens) external onlyOwner returns (bool) {
+        require(_claimStart > endTime && _claimStart > block.timestamp, "Invalid claim start time");
+        require(noOfTokens >= (totalTokensSold * baseDecimals), "Tokens less than sold");
         require(claimStart == 0, "Claim already set");
         claimStart = _claimStart;
-        IERC20Upgradeable(saleToken).transferFrom(
-            _msgSender(),
-            address(this),
-            noOfTokens
-        );
+        IERC20Upgradeable(saleToken).transferFrom(_msgSender(), address(this), noOfTokens);
         emit TokensAdded(saleToken, noOfTokens, block.timestamp);
         return true;
     }
@@ -334,11 +242,7 @@ contract Presale is
      * @dev To change the claim start time by the owner
      * @param _claimStart new claim start time
      */
-    function changeClaimStart(uint256 _claimStart)
-        external
-        onlyOwner
-        returns (bool)
-    {
+    function changeClaimStart(uint256 _claimStart) external onlyOwner returns (bool) {
         require(claimStart > 0, "Initial claim data not set");
         require(_claimStart > endTime, "Sale in progress");
         require(_claimStart > block.timestamp, "Claim start in past");

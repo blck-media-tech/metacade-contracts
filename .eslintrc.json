@@ -1,0 +1,21 @@
+{
+  "env": {
+    "commonjs": true,
+    "node": true
+  },
+  "extends": ["eslint:recommended", "prettier", "plugin:mocha/recommended"],
+  "overrides": [],
+  "plugins": ["prettier", "mocha"],
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "rules": {
+    "mocha/no-setup-in-describe": "off",
+    "prettier/prettier": [
+      "warn",
+      {
+        "endOfLine": "auto"
+      }
+    ]
+  }
+}

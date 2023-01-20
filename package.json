@@ -31,7 +31,9 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.1",
     "@openzeppelin/contracts-upgradeable": "^4.8.1",
+    "@openzeppelin/hardhat-upgrades": "^1.22.0",
     "chai": "^4.3.7",
+    "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "mocha": "^10.2.0"
   }
