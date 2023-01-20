@@ -41,42 +41,46 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         _;
     }
 
-    function configure(
-        address _aggregatorInterface,
-        address _USDTInterface,
-        uint256[9] _token_amount,
-        uint256[9] _token_price,
-        uint256 _startTime,
-        uint256 _endTime,
-        uint256 _currentStep
-    //TODO: think about ability to block configuration
-    ) {
-        aggregatorInterface = _aggregatorInterface;
-        USDTInterface = _USDTInterface;
-        token_amount = _token_amount;
-        token_price = _token_price;
-        currentStep = _currentStep;
-    }
+//    function configure(
+//        address _aggregatorInterface,
+//        address _USDTInterface,
+//        uint256[9] _token_amount,
+//        uint256[9] _token_price,
+//        uint256 _startTime,
+//        uint256 _endTime,
+//        uint256 _currentStep
+//    //TODO: think about ability to block configuration
+//    ) {
+//        aggregatorInterface = _aggregatorInterface;
+//        USDTInterface = _USDTInterface;
+//        token_amount = _token_amount;
+//        token_price = _token_price;
+//        currentStep = _currentStep;
+//    }
 
     constructor(
-        address _saleToken,
         address _previousPresale,
         address _betaPresale,
         address _saleToken,
         address _aggregatorInterface,
         address _USDTInterface,
-        uint256[9] _token_amount,
-        uint256[9] _token_price
+        uint256[9] memory _token_amount,
+        uint256[9] memory _token_price,
+        uint256 _startTime,
+        uint256 _endTime,
+        uint256 _currentStep
     ) {
-        saleToken = _saleToken;
         previousPresale = MetacadeOriginal(_previousPresale);
         betaPresale = MetacadeOriginal(_betaPresale);
         totalTokensSold = previousPresale.totalTokensSold() + betaPresale.totalTokensSold();
         saleToken = _saleToken;
-        aggregatorInterface = _aggregatorInterface;
-        USDTInterface = _USDTInterface;
+        aggregatorInterface = Aggregator(_aggregatorInterface);
+        USDTInterface = IERC20(_USDTInterface);
         token_amount = _token_amount;
         token_price = _token_price;
+        token_amount = _token_amount;
+        token_price = _token_price;
+        currentStep = _currentStep;
 
         emit SaleTimeSet(startTime, endTime, block.timestamp);
     }
@@ -121,11 +125,10 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         require(amount >= totalTokensSold, "Tokens less than sold");
         require(USDTInterface.balanceOf(address(this)) >= amount * 1e18, "Not enough balance");
         claimStart = _claimStartTime;
-        emit TokensAdded(saleToken, amount, block.timestamp);//FIXME: maybe this event is redundant
         return true;
     }
 
-    function getCurrentPrice(address _user) external onlyOwner {
+    function addToBlacklist(address _user) external onlyOwner {
         blacklist[_user] = true;
     }
 
@@ -147,7 +150,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
 
     function userDeposits(address user) public view returns(uint256) {
         if (hasClaimed[user]) return 0;
-        return usersDeposits[user] + previousPresale.userDeposits(user) + betaPresale.userDeposits();
+        return usersDeposits[user] + previousPresale.userDeposits(user) + betaPresale.userDeposits(user);
     }
 
     function buyWithEth(uint256 amount) external payable checkSaleState(amount) whenNotPaused nonReentrant returns (bool) {
@@ -163,7 +166,6 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         emit TokensBought(
             _msgSender(),
             amount,
-            address(0),
             weiAmount,
             block.timestamp
         );
@@ -193,7 +195,6 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         emit TokensBought(
             _msgSender(),
             amount,
-            address(USDTInterface),
             usdtPrice,
             block.timestamp
         );
