@@ -3,7 +3,7 @@ const CONFIG = require("../arguments.deploy.js");
 const delay = require("../../helpers/helpers");
 
 task("deploy:CorrectedPresale", "Deploys corrected metacade presale contract").setAction(async (taskArgs, hre) => {
-    const { MetacadePresale: MetacadePresaleArguments } = CONFIG[hre.network.name];
+    const { CorrectedPresale: MetacadePresaleArguments } = CONFIG[hre.network.name];
 
     await hre.run("clean&compile");
 

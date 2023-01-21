@@ -3,30 +3,31 @@ const hre = require("hardhat");
 const { BigNumber, getSigners } = hre.ethers;
 const { ZERO_ADDRESS, DAY_IN_SECONDS } = require("./consts");
 
-describe("MetacadePresale", function () {
-    const stageAmount = [
-        BigNumber.from("140000000"),
-        BigNumber.from("297500000"),
-        BigNumber.from("455000000"),
-        BigNumber.from("612500000"),
-        BigNumber.from("770000000"),
-        BigNumber.from("927500000"),
-        BigNumber.from("1085000000"),
-        BigNumber.from("1242500000"),
-        BigNumber.from("1400000000"),
-    ];
-    const stagePrice = [
-        BigNumber.from("8000000000000000"),
-        BigNumber.from("10000000000000000"),
-        BigNumber.from("12000000000000000"),
-        BigNumber.from("13000000000000000"),
-        BigNumber.from("14000000000000000"),
-        BigNumber.from("15500000000000000"),
-        BigNumber.from("17000000000000000"),
-        BigNumber.from("18500000000000000"),
-        BigNumber.from("20000000000000000"),
-    ];
+const stageAmount = [
+    "140000000",
+    "297500000",
+    "455000000",
+    "612500000",
+    "770000000",
+    "927500000",
+    "1085000000",
+    "1242500000",
+    "1400000000",
+].map((el) => BigNumber.from(el));
 
+const stagePrice = [
+    "8000000000000000",
+    "10000000000000000",
+    "12000000000000000",
+    "13000000000000000",
+    "14000000000000000",
+    "15500000000000000",
+    "17000000000000000",
+    "18500000000000000",
+    "20000000000000000",
+].map((el) => BigNumber.from(el));
+
+describe("MetacadePresale", function () {
     function calculateCurrentStepFixture(totalSoldAmount) {
         if (totalSoldAmount < stageAmount[0]) return 0;
         for (let i = 1; i < stageAmount.length; i++) {
@@ -781,6 +782,27 @@ describe("MetacadePresale", function () {
                 expect(ETHAmountAfter).to.equal(ETHAmountBefore.add(weiPrice));
             });
 
+            it("should revert if user blacklisted", async function () {
+                //Set values
+                const { correctedPresale: presale, saleStartTime, users } = await deployContractsFixture();
+                const tokensToPurchase = 1000;
+
+                //Timeshift to sale period
+                await timeTravelFixture(saleStartTime + 1);
+
+                //Blacklist user
+                await presale.connect(users.presaleOwner).addToBlacklist([users.creator.address]);
+
+                //Get wei price
+                const weiPrice = await presale.ethBuyHelper(tokensToPurchase);
+
+                //Buy with eth
+                const buyWithEthTx = presale.connect(users.creator).buyWithEth(tokensToPurchase, { value: weiPrice });
+
+                //Assert transaction was successful
+                await expect(buyWithEthTx).to.be.revertedWith("You are in blacklist");
+            });
+
             it("should revert if trying to buy before sales start", async function () {
                 //Set values
                 const { correctedPresale: presale, users } = await deployContractsFixture();
@@ -914,6 +936,30 @@ describe("MetacadePresale", function () {
                     purchaseTokensAmountBefore.add(BigNumber.from(10).pow(decimals).mul(tokensToPurchase))
                 );
                 expect(USDTAmountAfter).to.equal(USDTAmountBefore.add(USDTPrice));
+            });
+
+            it("should revert if user blacklisted", async function () {
+                //Set values
+                const { correctedPresale: presale, users, saleStartTime, USDT } = await deployContractsFixture();
+                const tokensToPurchase = 1000;
+
+                //Timeshift to sale period
+                await timeTravelFixture(saleStartTime + 1);
+
+                //Blacklist user
+                await presale.connect(users.presaleOwner).addToBlacklist([users.creator.address]);
+
+                //Get usdt price
+                const USDTPrice = await presale.usdtBuyHelper(tokensToPurchase);
+
+                //Add allowance to contract
+                await USDT.connect(users.creator).increaseAllowance(presale.address, USDTPrice);
+
+                //Buy with USDT
+                const buyWithUSDTTx = presale.connect(users.creator).buyWithUSDT(tokensToPurchase);
+
+                //Assert transaction was successful
+                await expect(buyWithUSDTTx).to.be.rejectedWith("You are in blacklist");
             });
 
             it("should revert if trying to buy before sales start", async function () {
@@ -1281,6 +1327,51 @@ describe("MetacadePresale", function () {
 
                 //Assert price with expected
                 expect(await usdtBuyHelperTx).to.equal(expectedPrice);
+            });
+        });
+
+        describe("'claimRemainingFunds' function", function () {
+            it("should transfer usdt from contract to address", async function () {
+                //Set values
+                const { correctedPresale: presale, USDT, users } = await deployContractsFixture();
+
+                await USDT.connect(users.creator).transfer(presale.address, 1000000);
+
+                //calculate values before
+                const balancePresaleBefore = await USDT.balanceOf(presale.address);
+                const balanceUserBefore = await USDT.balanceOf(users.creator.address);
+
+                //Calculate USDT price
+                const claimRemainingFundsTx = presale
+                    .connect(users.presaleOwner)
+                    .claimRemainingFunds(users.creator.address, balancePresaleBefore);
+
+                //Assert transaction was successful
+                await expect(claimRemainingFundsTx).not.to.be.reverted;
+
+                //calculate values after
+                const balancePresaleAfter = await USDT.balanceOf(presale.address);
+                const balanceUserAfter = await USDT.balanceOf(users.creator.address);
+
+                //Assert price with expected
+                expect(balancePresaleAfter).to.equal(0);
+                expect(balanceUserAfter).to.equal(balanceUserBefore.add(balancePresaleBefore));
+            });
+
+            it("should revert if called not by the owner", async function () {
+                //Set values
+                const { correctedPresale: presale, USDT, users } = await deployContractsFixture();
+
+                await USDT.connect(users.creator).transfer(presale.address, 1000000);
+
+                //calculate values before
+                const balancePresaleBefore = await USDT.balanceOf(presale.address);
+
+                //Calculate USDT price
+                const claimRemainingFundsTx = presale.claimRemainingFunds(users.creator.address, balancePresaleBefore);
+
+                //Assert transaction was reverted
+                await expect(claimRemainingFundsTx).to.be.revertedWith("Ownable: caller is not the owner");
             });
         });
     });

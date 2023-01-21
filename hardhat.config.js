@@ -2,7 +2,6 @@ require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 require("@openzeppelin/hardhat-upgrades");
 require("./task/metacade_token.deploy");
-require("./task/correctedPresale.deploy");
 require("./task/presale.deploy");
 require("./task/subtasks");
 require("./task/CorrectedPresale/correctedPresale.deploy");

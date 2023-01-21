@@ -22,7 +22,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
 
     uint256[9] public token_amount;
     uint256[9] public token_price;
-    uint8 constant maxStageIndex = 8;
+    uint8 constant maxStepIndex = 8;
 
     IERC20 public USDTInterface;
     Aggregator public aggregatorInterface;
@@ -37,7 +37,12 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
             "Invalid time for buying"
         );
         require(amount > 0, "Invalid sale amount");
-        require(amount + totalTokensSold <= token_amount[maxStageIndex], "Insufficient funds");
+        require(amount + totalTokensSold <= token_amount[maxStepIndex], "Insufficient funds");
+        _;
+    }
+
+    modifier notBlacklisted() {
+        require(!blacklist[_msgSender()], "You are in blacklist");
         _;
     }
 
@@ -69,7 +74,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         token_price = _token_price;
         startTime = _startTime;
         endTime = _endTime;
-        currentStep = _getStageByTotalSoldAmount();
+        currentStep = _getStepByTotalSoldAmount();
 
         emit SaleTimeSet(startTime, endTime, block.timestamp);
     }
@@ -96,17 +101,17 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
     }
 
     function configureClaim(
-        uint256 _claimStartTime
+        uint256 _claimStart
     ) external onlyOwner returns (bool) {
         require(IERC20(saleToken).balanceOf(address(this)) >= totalTokensSold * 1e18, "Not enough balance");
-        claimStart = _claimStartTime;
+        claimStart = _claimStart;
         return true;
     }
 
     function addToBlacklist(address[] calldata _users) external onlyOwner {
         uint256 usersAmount = _users.length;
         uint256 i = 0;
-        while(0<usersAmount) blacklist[_users[i++]] = true;
+        while(i<usersAmount) blacklist[_users[i++]] = true;
     }
 
     function getCurrentPrice() external view returns (uint256) {
@@ -118,11 +123,15 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
     }
 
     function getTotalPresaleAmount() external view returns (uint256) {
-        return token_amount[maxStageIndex];
-    }//TODO: think about merging into one service function returning all values
+        return token_amount[maxStepIndex];
+    }
 
     function totalSoldPrice() external view returns (uint256) {
         return _calculateInternalCost(totalTokensSold, 0 ,0);
+    }
+
+    function claimRemainingFunds(address tokenAddress, uint256 amount) external onlyOwner {
+        USDTInterface.transfer(tokenAddress, amount);
     }
 
     function userDeposits(address user) public view returns(uint256) {
@@ -130,26 +139,26 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         return usersDeposits[user] + previousPresale.userDeposits(user) + betaPresale.userDeposits(user);
     }
 
-    function buyWithEth(uint256 amount) external payable checkSaleState(amount) whenNotPaused nonReentrant returns (bool) {
-        uint256 weiAmount = ethBuyHelper(amount);
-        require(msg.value >= weiAmount, "Less payment");
-        _sendValue(payable(owner()), weiAmount);
-        uint256 excess = msg.value - weiAmount;
+    function buyWithEth(uint256 amount) external payable checkSaleState(amount) notBlacklisted whenNotPaused nonReentrant returns (bool) {
+        uint256 ethAmount = ethBuyHelper(amount);
+        require(msg.value >= ethAmount, "Less payment");
+        _sendValue(payable(owner()), ethAmount);
+        uint256 excess = msg.value - ethAmount;
         if (excess > 0) _sendValue(payable(_msgSender()), excess);
         totalTokensSold += amount;
         usersDeposits[_msgSender()] += amount * 1e18;
-        uint8 stageAfterPurchase = _getStageByTotalSoldAmount();
-        if (stageAfterPurchase>currentStep) currentStep = stageAfterPurchase;
+        uint8 stepAfterPurchase = _getStepByTotalSoldAmount();
+        if (stepAfterPurchase>currentStep) currentStep = stepAfterPurchase;
         emit TokensBought(
             _msgSender(),
             amount,
-            weiAmount,
+            ethAmount,
             block.timestamp
         );
         return true;
     }
 
-    function buyWithUSDT(uint256 amount) external checkSaleState(amount) whenNotPaused nonReentrant returns (bool) {
+    function buyWithUSDT(uint256 amount) external checkSaleState(amount) notBlacklisted whenNotPaused nonReentrant returns (bool) {
         uint256 usdtPrice = usdtBuyHelper(amount);
         require(usdtPrice <= USDTInterface.allowance(
             _msgSender(),
@@ -163,8 +172,8 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         require(success, "Token payment failed");
         totalTokensSold += amount;
         usersDeposits[_msgSender()] += amount * 1e18;
-        uint8 stageAfterPurchase = _getStageByTotalSoldAmount();
-        if (stageAfterPurchase>currentStep) currentStep = stageAfterPurchase;
+        uint8 stepAfterPurchase = _getStepByTotalSoldAmount();
+        if (stepAfterPurchase>currentStep) currentStep = stepAfterPurchase;
         emit TokensBought(
             _msgSender(),
             amount,
@@ -199,7 +208,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
     }
 
     function calculatePrice(uint256 _amount) public view returns (uint256) {
-        require(_amount + totalTokensSold <= token_amount[maxStageIndex], "Insufficient token amount.");
+        require(_amount + totalTokensSold <= token_amount[maxStepIndex], "Insufficient token amount.");
         return _calculateInternalCost(_amount, currentStep, totalTokensSold);
     }
 
@@ -209,27 +218,27 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         require(success, "ETH Payment failed");
     }
 
-    function _calculateInternalCost(uint256 _amount, uint256 _currentStage, uint256 _totalTokensSold) internal view returns (uint256 cost){
-        uint256 currentPrice = token_price[_currentStage];
-        uint256 currentAmount = token_amount[_currentStage];
+    function _calculateInternalCost(uint256 _amount, uint256 _currentStep, uint256 _totalTokensSold) internal view returns (uint256 cost){
+        uint256 currentPrice = token_price[_currentStep];
+        uint256 currentAmount = token_amount[_currentStep];
         if (_totalTokensSold + _amount <= currentAmount) {
             cost = _amount * currentPrice;
         }
         else {
             uint256 currentStageAmount = currentAmount - _totalTokensSold;
             uint256 nextStageAmount = _amount - currentStageAmount;
-            cost = currentStageAmount * currentPrice + _calculateInternalCost(nextStageAmount, _currentStage + 1, currentAmount);
+            cost = currentStageAmount * currentPrice + _calculateInternalCost(nextStageAmount, _currentStep + 1, currentAmount);
         }
 
         return cost;
     }
 
-    function _getStageByTotalSoldAmount() internal view returns (uint8) {
-        uint8 stageIndex = maxStageIndex;
-        while (stageIndex > 0) {
-            if (token_amount[stageIndex - 1] < totalTokensSold) break;
-            stageIndex -= 1;
+    function _getStepByTotalSoldAmount() internal view returns (uint8) {
+        uint8 stepIndex = maxStepIndex;
+        while (stepIndex > 0) {
+            if (token_amount[stepIndex - 1] < totalTokensSold) break;
+            stepIndex -= 1;
         }
-        return stageIndex;
+        return stepIndex;
     }
 }

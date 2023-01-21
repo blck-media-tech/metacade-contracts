@@ -101,10 +101,10 @@ Pausable
     ) external initializer {
         require(_oracle != address(0), "Zero aggregator address");
         require(_usdt != address(0), "Zero USDT address");
-        require(
-            _startTime > block.timestamp && _endTime > _startTime,
-            "Invalid time"
-        );
+//        require(
+//            _startTime > block.timestamp && _endTime > _startTime,
+//            "Invalid time"
+//        );
         baseDecimals = (10**18);
         token_amount = [
         157_500_000,
