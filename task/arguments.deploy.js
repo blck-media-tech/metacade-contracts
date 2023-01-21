@@ -10,7 +10,7 @@ const stageAmount = [
     "1085000000",
     "1242500000",
     "1400000000",
-].map((el) => BigNumber.from(el));
+].map(BigNumber.from);
 
 const stagePrice = [
     "8000000000000000",
@@ -22,7 +22,7 @@ const stagePrice = [
     "17000000000000000",
     "18500000000000000",
     "20000000000000000",
-].map((el) => BigNumber.from(el));
+].map(BigNumber.from);
 
 module.exports = {
     testnet: {
