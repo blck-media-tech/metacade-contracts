@@ -82,22 +82,11 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         _unpause();
     }
 
-    function setEndTime(uint256 _newEndtime) external onlyOwner{
-        require(startTime > 0, "Sale not started yet");
-        require(_newEndtime > block.timestamp, "Endtime must be in the future");
-        endTime = _newEndtime;
-    }
-
     function changeSaleTimes(uint256 _startTime, uint256 _endTime)
     external
     onlyOwner
     {
-            require(block.timestamp < startTime, "Sale already started");
-            require(block.timestamp < _startTime, "Sale time in past");
             if (startTime != _startTime) startTime = _startTime;
-
-            require(block.timestamp < endTime, "Sale already ended");
-            require(_endTime > startTime, "Invalid endTime");
             if (endTime != _endTime) endTime = _endTime;
             emit SaleTimeSet(
                 _startTime,
@@ -107,18 +96,17 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
     }
 
     function configureClaim(
-        uint256 _claimStartTime,
-        uint256 amount
+        uint256 _claimStartTime
     ) external onlyOwner returns (bool) {
-        require(_claimStartTime > endTime && _claimStartTime > block.timestamp, "Invalid claim start time");
-        require(amount >= totalTokensSold, "Tokens less than sold");
-        require(IERC20(saleToken).balanceOf(address(this)) >= amount * 1e18, "Not enough balance");
+        require(IERC20(saleToken).balanceOf(address(this)) >= totalTokensSold * 1e18, "Not enough balance");
         claimStart = _claimStartTime;
         return true;
     }
 
-    function addToBlacklist(address _user) external onlyOwner {
-        blacklist[_user] = true;
+    function addToBlacklist(address[] calldata _users) external onlyOwner {
+        uint256 usersAmount = _users.length;
+        uint256 i = 0;
+        while(0<usersAmount) blacklist[_users[i++]] = true;
     }
 
     function getCurrentPrice() external view returns (uint256) {
@@ -131,10 +119,10 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
 
     function getTotalPresaleAmount() external view returns (uint256) {
         return token_amount[maxStageIndex];
-    }
+    }//TODO: think about merging into one service function returning all values
 
     function totalSoldPrice() external view returns (uint256) {
-        return _calculateInternalCost(totalTokensSold, 0 ,0);//FIXME:this will calculate values including previous presales and might have mistakes if beta presale sold more tokens that 140000000
+        return _calculateInternalCost(totalTokensSold, 0 ,0);
     }
 
     function userDeposits(address user) public view returns(uint256) {
@@ -163,19 +151,15 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
 
     function buyWithUSDT(uint256 amount) external checkSaleState(amount) whenNotPaused nonReentrant returns (bool) {
         uint256 usdtPrice = usdtBuyHelper(amount);
-        uint256 allowance = USDTInterface.allowance(
+        require(usdtPrice <= USDTInterface.allowance(
             _msgSender(),
             address(this)
-        );
-        require(usdtPrice <= allowance, "Not enough allowance");
-        (bool success,) = address(USDTInterface).call(
-            abi.encodeWithSignature(
-                "transferFrom(address,address,uint256)",
+        ), "Not enough allowance");
+        bool success = USDTInterface.transferFrom(
                 _msgSender(),
                 owner(),
                 usdtPrice
-            )
-        );
+            );
         require(success, "Token payment failed");
         totalTokensSold += amount;
         usersDeposits[_msgSender()] += amount * 1e18;
@@ -219,20 +203,22 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         return _calculateInternalCost(_amount, currentStep, totalTokensSold);
     }
 
-    function _sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Low balance");
-        (bool success,) = recipient.call{value : amount}("");
+    function _sendValue(address payable recipient, uint256 weiAmount) internal {
+        require(address(this).balance >= weiAmount, "Low balance");
+        (bool success,) = recipient.call{value : weiAmount}("");
         require(success, "ETH Payment failed");
     }
 
     function _calculateInternalCost(uint256 _amount, uint256 _currentStage, uint256 _totalTokensSold) internal view returns (uint256 cost){
-        if (_totalTokensSold + _amount <= token_amount[_currentStage]) {
-            cost = _amount * token_price[_currentStage];
+        uint256 currentPrice = token_price[_currentStage];
+        uint256 currentAmount = token_amount[_currentStage];
+        if (_totalTokensSold + _amount <= currentAmount) {
+            cost = _amount * currentPrice;
         }
         else {
-            uint256 currentStageAmount = token_amount[_currentStage] - _totalTokensSold;
+            uint256 currentStageAmount = currentAmount - _totalTokensSold;
             uint256 nextStageAmount = _amount - currentStageAmount;
-            cost = currentStageAmount * token_price[_currentStage] + _calculateInternalCost(nextStageAmount, _currentStage + 1, token_amount[_currentStage]);
+            cost = currentStageAmount * currentPrice + _calculateInternalCost(nextStageAmount, _currentStage + 1, currentAmount);
         }
 
         return cost;
