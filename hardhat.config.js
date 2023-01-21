@@ -2,8 +2,13 @@ require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 require("@openzeppelin/hardhat-upgrades");
 require("./task/metacade_token.deploy");
+require("./task/correctedPresale.deploy");
 require("./task/presale.deploy");
 require("./task/subtasks");
+require("./task/CorrectedPresale/correctedPresale.deploy");
+require("./task/CorrectedPresale/USDTStub.deploy");
+require("./task/CorrectedPresale/ChainlinkPriceFeedStub.deploy");
+require("./task/CorrectedPresale/originalPresale.deploy");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 
@@ -23,7 +28,7 @@ module.exports = {
         },
         testnet: {
             accounts: [process.env.DEPLOYER_PRIVATE_KEY],
-            url: `https://goerli.infura.io/v3/${process.env.GOERLI_KEY}`,
+            url: `https://endpoints.omniatech.io/v1/eth/goerli/public`,
         },
         mainnet: {
             accounts: [process.env.DEPLOYER_PRIVATE_KEY],
