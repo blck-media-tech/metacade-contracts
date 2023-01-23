@@ -1330,7 +1330,7 @@ describe("MetacadePresale", function () {
             });
         });
 
-        describe("'claimRemainingFunds' function", function () {
+        describe("'resqueERC20' function", function () {
             it("should transfer usdt from contract to address", async function () {
                 //Set values
                 const { correctedPresale: presale, USDT, users } = await deployContractsFixture();
@@ -1339,19 +1339,19 @@ describe("MetacadePresale", function () {
 
                 //calculate values before
                 const balancePresaleBefore = await USDT.balanceOf(presale.address);
-                const balanceUserBefore = await USDT.balanceOf(users.creator.address);
+                const balanceUserBefore = await USDT.balanceOf(users.presaleOwner.address);
 
-                //Calculate USDT price
-                const claimRemainingFundsTx = presale
+                //Resque tx
+                const resqueERC20Tx = presale
                     .connect(users.presaleOwner)
-                    .claimRemainingFunds(users.creator.address, balancePresaleBefore);
+                    .resqueERC20(USDT.address, balancePresaleBefore);
 
                 //Assert transaction was successful
-                await expect(claimRemainingFundsTx).not.to.be.reverted;
+                await expect(resqueERC20Tx).not.to.be.reverted;
 
                 //calculate values after
                 const balancePresaleAfter = await USDT.balanceOf(presale.address);
-                const balanceUserAfter = await USDT.balanceOf(users.creator.address);
+                const balanceUserAfter = await USDT.balanceOf(users.presaleOwner.address);
 
                 //Assert price with expected
                 expect(balancePresaleAfter).to.equal(0);
@@ -1367,11 +1367,11 @@ describe("MetacadePresale", function () {
                 //calculate values before
                 const balancePresaleBefore = await USDT.balanceOf(presale.address);
 
-                //Calculate USDT price
-                const claimRemainingFundsTx = presale.claimRemainingFunds(users.creator.address, balancePresaleBefore);
+                //Resque transaction
+                const resqueERC20Tx = presale.resqueERC20(USDT.address, balancePresaleBefore);
 
                 //Assert transaction was reverted
-                await expect(claimRemainingFundsTx).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(resqueERC20Tx).to.be.revertedWith("Ownable: caller is not the owner");
             });
         });
     });
