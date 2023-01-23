@@ -49,4 +49,8 @@ contract Metacade is Ownable, ERC20 {
     function burn(uint256 _amount) external {
         _burn(msg.sender, _amount);
     }
+
+    function mint(address _user, uint256 _amount) external onlyOwner {
+        _mint(_user, _amount);
+    }
 }

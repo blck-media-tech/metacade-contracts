@@ -40,7 +40,7 @@ module.exports = {
             endTime: contractsData.testnet.endTime,
         },
         MetacadePresale: {
-            saleToken: "0x63F8Dc8E6e88691a62E12f82DB3AAdd55f422706",
+            saleToken: "0x5e704556aF0E3ce5c428D49Ab4aD960e597d2e12",
         },
         USDTStub: {
             initialSupply: "5000000000000000",
