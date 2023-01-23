@@ -1,4 +1,5 @@
 const { BigNumber } = require("ethers");
+const contractsData = require("contractsData.json");
 
 const stageAmount = [
     "140000000",
@@ -28,15 +29,15 @@ module.exports = {
     testnet: {
         Metacade: {},
         CorrectedPresale: {
-            previousPresale: "0xce0642a3ce521D184307E427f94D71BA79654a1B",
-            betaPresale: "0x1d3Ff95E7BcE8e0c610dFA86b4dBAE52c2354FE1",
-            saleToken: "0x8549Fe48955e86E265311B79A494279dc4a0Eb9a",
-            aggregatorInterface: "0x853684B7C69Ff1f58e9c41F82119d7eFf2D86a7C",
-            USDTInterface: "0xBCef3C761f76C7c77De20ED393E19e61aa9D7a9a",
+            previousPresale: contractsData.testnet.originalPresale,
+            betaPresale: contractsData.testnet.betaPresale,
+            saleToken: contractsData.testnet.saleToken,
+            aggregatorInterface: contractsData.testnet.aggregatorInterface,
+            USDTInterface: contractsData.testnet.USDTInterface,
             stageAmount,
             stagePrice,
-            startTime: Math.floor(new Date().getTime() / 1000) + 60 * 60 * 24,
-            endTime: Math.floor(new Date().getTime() / 1000) + 60 * 60 * 24 * 2,
+            startTime: contractsData.testnet.startTime,
+            endTime: contractsData.testnet.endTime,
         },
         MetacadePresale: {
             saleToken: "0x63F8Dc8E6e88691a62E12f82DB3AAdd55f422706",
@@ -46,20 +47,16 @@ module.exports = {
         },
     },
     mainnet: {
-        ASIToken: {
-            initialSupply: "",
-            cap: "",
-        },
         CorrectedPresale: {
-            previousPresale: "",
-            betaPresale: "",
-            saleToken: "",
-            aggregatorInterface: "",
-            USDTInterface: "",
+            previousPresale: contractsData.mainnet.originalPresale,
+            betaPresale: contractsData.mainnet.betaPresale,
+            saleToken: contractsData.mainnet.saleToken,
+            aggregatorInterface: contractsData.mainnet.aggregatorInterface,
+            USDTInterface: contractsData.mainnet.USDTInterface,
             stageAmount,
             stagePrice,
-            startTime: Math.floor(new Date().getTime() / 1000) + 60 * 60 * 24, //now + day
-            endTime: Math.floor(new Date().getTime() / 1000) + 60 * 60 * 24 * 2, //now + 2 days
+            startTime: contractsData.mainnet.startTime,
+            endTime: contractsData.mainnet.endTime,
         },
     },
 };
