@@ -1,5 +1,5 @@
 const { BigNumber } = require("ethers");
-const contractsData = require("contractsData.json");
+const contractsData = require("./contractsData.json");
 
 const stageAmount = [
     "140000000",
@@ -43,7 +43,10 @@ module.exports = {
             saleToken: "0x63F8Dc8E6e88691a62E12f82DB3AAdd55f422706",
         },
         USDTStub: {
-            initialSupply: "500000",
+            initialSupply: "5000000000000000",
+            name: "Tether USD",
+            symbol: "USDT",
+            decimals: "6",
         },
     },
     mainnet: {
