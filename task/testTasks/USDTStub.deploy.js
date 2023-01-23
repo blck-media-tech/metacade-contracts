@@ -6,7 +6,7 @@ task("deploy:USDTStub", "Deploys stub USDT token").setAction(async (taskArgs, hr
 
     await hre.run("clean&compile");
 
-    const USDTStubAddress = await hre.run("deployment", {
+    const USDTStub = await hre.run("deployment", {
         network: hre.network.name,
         arguments: USDTStubArguments,
         contract: "USDTStub",
@@ -14,7 +14,7 @@ task("deploy:USDTStub", "Deploys stub USDT token").setAction(async (taskArgs, hr
 
     await hre.run("verification", {
         contract: "USDTStub",
-        address: USDTStubAddress,
+        address: USDTStub.address,
         constructorArguments: Object.values(USDTStubArguments),
     });
 });

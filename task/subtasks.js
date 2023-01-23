@@ -25,7 +25,7 @@ subtask("deployment", "Deploys specified contract").setAction(async (taskArgs, h
     }
 
     console.log(`\n\n✅ ${taskArgs.contract} deployed to: ${Contract.address}`);
-    return Contract.address;
+    return Contract;
 });
 
 subtask("deploymentError", "Notifies about deployment error").setAction(async (taskArgs) => {

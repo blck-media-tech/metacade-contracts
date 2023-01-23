@@ -7,7 +7,7 @@ task("deploy:CorrectedPresale", "Deploys corrected metacade presale contract").s
 
     await hre.run("clean&compile");
 
-    const MetacadePresaleAddress = await hre.run("deployment", {
+    const MetacadePresale = await hre.run("deployment", {
         network: hre.network.name,
         arguments: MetacadePresaleArguments,
         contract: "MetacadePresale",
@@ -17,7 +17,7 @@ task("deploy:CorrectedPresale", "Deploys corrected metacade presale contract").s
 
     await hre.run("verification", {
         contract: "MetacadePresale",
-        address: MetacadePresaleAddress,
+        address: MetacadePresale.address,
         constructorArguments: Object.values(MetacadePresaleArguments),
     });
 });

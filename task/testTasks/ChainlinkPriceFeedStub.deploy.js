@@ -6,7 +6,7 @@ task("deploy:ChainlinkPriceFeedStub", "Deploys stub ChainlinkPriceFeed contract 
 
         await hre.run("clean&compile");
 
-        const ChainlinkPriceFeedStubAddress = await hre.run("deployment", {
+        const ChainlinkPriceFeedStub = await hre.run("deployment", {
             network: hre.network.name,
             arguments: ChainlinkPriceFeedStubArguments,
             contract: "ChainlinkPriceFeedStub",
@@ -14,7 +14,7 @@ task("deploy:ChainlinkPriceFeedStub", "Deploys stub ChainlinkPriceFeed contract 
 
         await hre.run("verification", {
             contract: "ChainlinkPriceFeedStub",
-            address: ChainlinkPriceFeedStubAddress,
+            address: ChainlinkPriceFeedStub.address,
             constructorArguments: Object.values(ChainlinkPriceFeedStubArguments),
         });
     }
