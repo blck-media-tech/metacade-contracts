@@ -4,10 +4,11 @@ require("@openzeppelin/hardhat-upgrades");
 require("./task/metacade_token.deploy");
 require("./task/presale.deploy");
 require("./task/subtasks");
-require("./task/CorrectedPresale/correctedPresale.deploy");
-require("./task/CorrectedPresale/USDTStub.deploy");
-require("./task/CorrectedPresale/ChainlinkPriceFeedStub.deploy");
-require("./task/CorrectedPresale/originalPresale.deploy");
+require("./task/correctedPresale.deploy");
+require("./task/collectData");
+require("./task/testTasks/USDTStub.deploy");
+require("./task/testTasks/ChainlinkPriceFeedStub.deploy");
+require("./task/testTasks/originalPresale.deploy");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 
@@ -21,9 +22,9 @@ module.exports = {
     },
     networks: {
         hardhat: {
-          accounts: {
-            accountsBalance: "100000000000000000000000000",
-          },
+            accounts: {
+                accountsBalance: "100000000000000000000000000",
+            },
         },
         testnet: {
             accounts: [process.env.DEPLOYER_PRIVATE_KEY],

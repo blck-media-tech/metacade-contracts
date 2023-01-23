@@ -1,6 +1,6 @@
 const { task } = require("hardhat/config");
-const CONFIG = require("../arguments.deploy.js");
-const delay = require("../../helpers/helpers");
+const CONFIG = require("./arguments.deploy.js");
+const delay = require("../helpers/helpers");
 
 task("deploy:CorrectedPresale", "Deploys corrected metacade presale contract").setAction(async (taskArgs, hre) => {
     const { CorrectedPresale: MetacadePresaleArguments } = CONFIG[hre.network.name];
