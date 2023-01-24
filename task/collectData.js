@@ -24,7 +24,7 @@ task("collectContractsData", "Get contracts data from already deployed contracts
         networkData.startTime = (await originalPresale.startTime()).toString();
         networkData.endTime = (await originalPresale.endTime()).toString();
 
-        fs.writeFileSync(path.resolve(__dirname) + "/contractsData.json", JSON.stringify(data));
+        fs.writeFileSync(path.resolve(__dirname) + "/contractsData.json", JSON.stringify(data, null, 2));
     } catch (error) {
         console.error(error);
         process.exit(1);

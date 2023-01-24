@@ -10,6 +10,11 @@
   },
   "testnet": {
     "betaPresale": "0xc8563b8A148C2e00A21220EbBd7aB78F42FFa699",
-    "originalPresale": "0xBA210386197CAC93E21723bB959aC1f811C33aC0"
+    "originalPresale": "0xBA210386197CAC93E21723bB959aC1f811C33aC0",
+    "saleToken": "0x5e704556aF0E3ce5c428D49Ab4aD960e597d2e12",
+    "aggregatorInterface": "0x853684B7C69Ff1f58e9c41F82119d7eFf2D86a7C",
+    "USDTInterface": "0x055A3f3595Bb8DC677b4AbbC438Becc470B634c4",
+    "startTime": "1674497279",
+    "endTime": "1684497279"
   }
 }
