@@ -10,6 +10,7 @@ require("./task/testTasks/USDTStub.deploy");
 require("./task/testTasks/ChainlinkPriceFeedStub.deploy");
 require("./task/testTasks/originalPresale.deploy");
 require("./task/testTasks/betaPresale.deploy");
+require("./task/testTasks/buyTokens");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 
