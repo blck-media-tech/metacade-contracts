@@ -42,7 +42,7 @@ describe("MetacadePresale", function () {
 
     async function deployUSDTStubFixture(creator) {
         const USDTFactory = await hre.ethers.getContractFactory("USDTStub");
-        return await USDTFactory.connect(creator).deploy(500000000);
+        return await USDTFactory.connect(creator).deploy(1000000000000000, "Tether USD", "USDT", 6);
     }
 
     async function deployChainlinkPriceFeedStubFixture(creator) {
@@ -113,8 +113,8 @@ describe("MetacadePresale", function () {
         await originalPresale.buyWithEth(tokensToPurchase, { value: ethPrice });
 
         const allowance = await originalPresale.usdtBuyHelper(tokensToPurchase);
-        await usdt.connect(creator).increaseAllowance(originalPresale.address, allowance);
-        await originalPresale.buyWithUSDT(tokensToPurchase);
+        await usdt.connect(creator).approve(originalPresale.address, allowance);
+        await originalPresale.connect(creator).buyWithUSDT(tokensToPurchase);
     }
 
     async function deployCorrectedPresaleFixture(
@@ -914,7 +914,7 @@ describe("MetacadePresale", function () {
                 const USDTPrice = await presale.usdtBuyHelper(tokensToPurchase);
 
                 //Add allowance to contract
-                await USDT.connect(users.creator).increaseAllowance(presale.address, USDTPrice);
+                await USDT.connect(users.creator).approve(presale.address, USDTPrice);
 
                 //Get values before transaction
                 const purchaseTokensAmountBefore = await presale.userDeposits(users.creator.address);
@@ -953,7 +953,7 @@ describe("MetacadePresale", function () {
                 const USDTPrice = await presale.usdtBuyHelper(tokensToPurchase);
 
                 //Add allowance to contract
-                await USDT.connect(users.creator).increaseAllowance(presale.address, USDTPrice);
+                await USDT.connect(users.creator).approve(presale.address, USDTPrice);
 
                 //Buy with USDT
                 const buyWithUSDTTx = presale.connect(users.creator).buyWithUSDT(tokensToPurchase);
@@ -971,7 +971,7 @@ describe("MetacadePresale", function () {
                 const USDTPrice = await presale.usdtBuyHelper(tokensToPurchase);
 
                 //Add allowance to contract
-                await USDT.connect(users.creator).increaseAllowance(presale.address, USDTPrice);
+                await USDT.connect(users.creator).approve(presale.address, USDTPrice);
 
                 //Buy with USDT
                 const buyWithUSDTTx = presale.connect(users.creator).buyWithUSDT(tokensToPurchase);
@@ -1007,7 +1007,7 @@ describe("MetacadePresale", function () {
                 const USDTPrice = await presale.usdtBuyHelper(tokensToPurchase);
 
                 //Add allowance to contract
-                await USDT.connect(users.creator).increaseAllowance(presale.address, USDTPrice);
+                await USDT.connect(users.creator).approve(presale.address, USDTPrice);
 
                 //Buy with USDT
                 const buyWithUSDTTx = presale.connect(users.creator).buyWithUSDT(tokensToPurchase + 1);
@@ -1028,7 +1028,7 @@ describe("MetacadePresale", function () {
                 const USDTPrice = await presale.usdtBuyHelper(tokensToPurchase);
 
                 //Add allowance to contract
-                await USDT.connect(users.creator).increaseAllowance(presale.address, USDTPrice);
+                await USDT.connect(users.creator).approve(presale.address, USDTPrice);
 
                 //Buy with USDT
                 const buyWithUSDTTx = presale.connect(users.creator).buyWithUSDT(tokensToPurchase);
@@ -1049,7 +1049,7 @@ describe("MetacadePresale", function () {
                 const USDTPrice = await presale.usdtBuyHelper(tokensToPurchase);
 
                 //Add allowance to contract
-                await USDT.connect(users.creator).increaseAllowance(presale.address, USDTPrice);
+                await USDT.connect(users.creator).approve(presale.address, USDTPrice);
 
                 //Buy with USDT
                 const buyWithUSDTTx = presale.connect(users.creator).buyWithUSDT(tokensToPurchase);

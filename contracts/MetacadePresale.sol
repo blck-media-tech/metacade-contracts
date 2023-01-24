@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -11,6 +12,8 @@ import "../interfaces/IAggregator.sol";
 import "../interfaces/IMetacadePresale.sol";
 
 contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+    
     address public immutable saleToken;
     IMetacadeOriginal public immutable previousPresale;
     IMetacadeOriginal public immutable betaPresale;
@@ -192,8 +195,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
      * @param _amount       - Amount of tokens to resque
      */
     function resqueERC20(address _tokenAddress, uint256 _amount) external onlyOwner {
-        bool success = IERC20(_tokenAddress).transfer(_msgSender(), _amount);
-        require(success, "Token transfer failed");
+        IERC20(_tokenAddress).safeTransfer(_msgSender(), _amount);
     }
 
     /**
@@ -239,12 +241,11 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
             _msgSender(),
             address(this)
         ), "Not enough allowance");
-        bool success = USDTInterface.transferFrom(
+        USDTInterface.safeTransferFrom(
                 _msgSender(),
                 owner(),
                 usdtPrice
             );
-        require(success, "Token payment failed");
         totalTokensSold += _amount;
         _userDeposits[_msgSender()] += _amount * 1e18;
         uint8 stepAfterPurchase = _getStepByTotalSoldAmount();
@@ -267,8 +268,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         uint256 amount = userDeposits(_msgSender());
         require(amount > 0, "Nothing to claim");
         hasClaimed[_msgSender()] = true;
-        bool success = IERC20(saleToken).transfer(_msgSender(), amount);
-        require(success, "Transfer failed");
+        IERC20(saleToken).safeTransfer(_msgSender(), amount);
         emit TokensClaimed(_msgSender(), amount, block.timestamp);
     }
 
