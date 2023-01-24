@@ -20,22 +20,24 @@ task("test:buyTokens", "Get contracts data from already deployed contracts")
         const USDT = await USDTFactory.attach(data.USDTInterface);
 
         async function buyTokens(signer, amount) {
-            let tokenAmount = presale.connect(signer).usdtBuyHelper(amount * 2);
+            let tokenAmount = await presale.connect(signer).usdtBuyHelper(amount * 2);
             await USDT.connect(signer).approve(presale.address, tokenAmount);
             await presale.connect(signer).buyWithUSDT(amount);
-            console.log(`Account ${signer.address} bought ${amount} tokens`);
         }
 
         console.log("\n\n⚙️ Purchasing tokens\n------------------------------------");
         console.log(`📡 Selected network: ${hre.network.name}`);
 
-        for (let i in users) {
-            const signer = users[i];
-            const amount = taskArgs.amount / users.length;
-            try {
-                await buyTokens(signer, amount);
-            } catch (e) {
-                console.log(`Account ${signer.address} error when bought ${amount} tokens`);
-            }
-        }
+        const amount = taskArgs.amount / users.length;
+        const transactions = users.map((user) => {
+            return buyTokens(user, amount)
+                .then(() => {
+                    console.log(`Account ${user.address} bought ${amount} tokens`);
+                })
+                .catch((err) => {
+                    console.log(`Account ${user.address} error when bought ${amount} tokens: `, err.reason);
+                });
+        });
+
+        await Promise.all(transactions);
     });

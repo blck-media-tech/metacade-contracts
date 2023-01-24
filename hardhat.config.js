@@ -38,8 +38,9 @@ module.exports = {
             },
         },
         testnet: {
-            accounts: [process.env.DEPLOYER_PRIVATE_KEY],
+            accounts: [process.env.DEPLOYER_PRIVATE_KEY, ...process.env.TEST_USER_PRIVATE_KEYS.split(",")],
             url: `https://endpoints.omniatech.io/v1/eth/goerli/public`,
+            gas: 6000000,
         },
         mainnet: {
             accounts: [process.env.DEPLOYER_PRIVATE_KEY],
