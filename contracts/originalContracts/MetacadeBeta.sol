@@ -2,38 +2,41 @@
 
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface Aggregator {
     function latestRoundData()
-        external
-        view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+    external
+    view
+    returns (
+        uint80 roundId,
+        int256 answer,
+        uint256 startedAt,
+        uint256 updatedAt,
+        uint80 answeredInRound
+    );
 }
 
-contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgradeable, PausableUpgradeable {
+contract MetacadeBeta is
+Initializable,
+ReentrancyGuard,
+Ownable,
+Pausable
+{
     uint256 public totalTokensSold = 0;
     uint256 public currentStep = 0;
 
     uint256 public startTime;
     uint256 public endTime;
     uint256 public claimStart;
-    address public constant saleToken = 0xed328E9C1179a30ddC1E7595E036AEd8760C22aF;
+    address public immutable saleToken;
     uint256 public baseDecimals;
 
-    IERC20Upgradeable public USDTInterface;
+    IERC20 public USDTInterface;
     Aggregator public aggregatorInterface;
     // https://docs.chain.link/docs/ethereum-addresses/ => (ETH / USD)
 
@@ -78,6 +81,10 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
 
     /// @custom:oz-upgrades-unsafe-allow constructor
 
+    constructor(address _saleToken) {
+        saleToken = _saleToken;
+    }
+
     /**
      * @dev Initializes the contract and sets key parameters
      * @param _oracle Oracle contract to fetch ETH/USDT price
@@ -93,17 +100,14 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
     ) external initializer {
         require(_oracle != address(0), "Zero aggregator address");
         require(_usdt != address(0), "Zero USDT address");
-        require(
-            _startTime > block.timestamp && _endTime > _startTime,
-            "Invalid time"
-        );
-        __Pausable_init_unchained();
-        __Ownable_init_unchained();
-        __ReentrancyGuard_init_unchained();
+//        require(
+//            _startTime > block.timestamp && _endTime > _startTime,
+//            "Invalid time"
+//        );
         baseDecimals = (10**18);
-               
+
         aggregatorInterface = Aggregator(_oracle);
-        USDTInterface = IERC20Upgradeable(_usdt);
+        USDTInterface = IERC20(_usdt);
         startTime = _startTime;
         endTime = _endTime;
         emit SaleTimeSet(startTime, endTime, block.timestamp);
@@ -128,12 +132,12 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
      * @param _amount No of tokens
      */
     function calculatePrice(uint256 _amount)
-        public
-        view
-        returns (uint256)
+    public
+    view
+    returns (uint256)
     {
         uint256 USDTAmount;
-         USDTAmount = _amount * token_price;
+        USDTAmount = _amount * token_price;
         return USDTAmount;
     }
 
@@ -143,13 +147,13 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
      * @param _endTime New end time
      */
     function changeSaleTimes(uint256 _startTime, uint256 _endTime)
-        external
-        onlyOwner
+    external
+    onlyOwner
     {
-        require(_startTime > 0 || _endTime > 0, "Invalid parameters");
+//        require(_startTime > 0 || _endTime > 0, "Invalid parameters");
         if (_startTime > 0) {
-            require(block.timestamp < startTime, "Sale already started");
-            require(block.timestamp < _startTime, "Sale time in past");
+//            require(block.timestamp < startTime, "Sale already started");
+//            require(block.timestamp < _startTime, "Sale time in past");
             uint256 prevValue = startTime;
             startTime = _startTime;
             emit SaleTimeUpdated(
@@ -161,8 +165,8 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
         }
 
         if (_endTime > 0) {
-            require(block.timestamp < endTime, "Sale already ended");
-            require(_endTime > startTime, "Invalid endTime");
+//            require(block.timestamp < endTime, "Sale already ended");
+//            require(_endTime > startTime, "Invalid endTime");
             uint256 prevValue = endTime;
             endTime = _endTime;
             emit SaleTimeUpdated(
@@ -184,10 +188,10 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
     }
 
     modifier checkSaleState(uint256 amount) {
-        require(
-            block.timestamp >= startTime && block.timestamp <= endTime,
-            "Invalid time for buying"
-        );
+//        require(
+//            block.timestamp >= startTime && block.timestamp <= endTime,
+//            "Invalid time for buying"
+//        );
         require(amount > 0, "Invalid sale amount");
         _;
     }
@@ -197,10 +201,10 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
      * @param amount No of tokens to buy
      */
     function buyWithUSDT(uint256 amount)
-        external
-        checkSaleState(amount)
-        whenNotPaused
-        returns (bool)
+    external
+    checkSaleState(amount)
+    whenNotPaused
+    returns (bool)
     {
         require(amount + totalTokensSold <= 140_000_000, "Exceeds Beta Stage");
         uint256 usdPrice = calculatePrice(amount);
@@ -237,12 +241,12 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
      * @param amount No of tokens to buy
      */
     function buyWithEth(uint256 amount)
-        external
-        payable
-        checkSaleState(amount)
-        whenNotPaused
-        nonReentrant
-        returns (bool)
+    external
+    payable
+    checkSaleState(amount)
+    whenNotPaused
+    nonReentrant
+    returns (bool)
     {
         require(amount + totalTokensSold <= 140_000_000, "Exceeds Beta Stage");
         uint256 usdPrice = calculatePrice(amount);
@@ -269,9 +273,9 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
      * @param amount No of tokens to buy
      */
     function ethBuyHelper(uint256 amount)
-        external
-        view
-        returns (uint256 ethAmount)
+    external
+    view
+    returns (uint256 ethAmount)
     {
         uint256 usdPrice = calculatePrice(amount);
         ethAmount = (usdPrice * baseDecimals) / getLatestPrice();
@@ -282,9 +286,9 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
      * @param amount No of tokens to buy
      */
     function usdtBuyHelper(uint256 amount)
-        external
-        view
-        returns (uint256 usdPrice)
+    external
+    view
+    returns (uint256 usdPrice)
     {
         usdPrice = calculatePrice(amount);
         usdPrice = usdPrice / (10**12);
@@ -301,22 +305,22 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
      * @param _claimStart claim start time
      * @param noOfTokens no of tokens to add to the contract
      */
-     
+
     function startClaim(
         uint256 _claimStart,
         uint256 noOfTokens
     ) external onlyOwner returns (bool) {
-        require(
-            _claimStart > endTime && _claimStart > block.timestamp,
-            "Invalid claim start time"
-        );
+//        require(
+//            _claimStart > endTime && _claimStart > block.timestamp,
+//            "Invalid claim start time"
+//        );
         require(
             noOfTokens >= (totalTokensSold * baseDecimals),
             "Tokens less than sold"
         );
         require(claimStart == 0, "Claim already set");
         claimStart = _claimStart;
-        IERC20Upgradeable(saleToken).transferFrom(
+        IERC20(saleToken).transferFrom(
             _msgSender(),
             address(this),
             noOfTokens
@@ -330,13 +334,13 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
      * @param _claimStart new claim start time
      */
     function changeClaimStart(uint256 _claimStart)
-        external
-        onlyOwner
-        returns (bool)
+    external
+    onlyOwner
+    returns (bool)
     {
         require(claimStart > 0, "Initial claim data not set");
-        require(_claimStart > endTime, "Sale in progress");
-        require(_claimStart > block.timestamp, "Claim start in past");
+//        require(_claimStart > endTime, "Sale in progress");
+//        require(_claimStart > block.timestamp, "Claim start in past");
         uint256 prevValue = claimStart;
         claimStart = _claimStart;
         emit ClaimStartUpdated(prevValue, _claimStart, block.timestamp);
@@ -354,7 +358,7 @@ contract PresaleBeta is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
         uint256 amount = userDeposits[_msgSender()];
         require(amount > 0, "Nothing to claim");
         delete userDeposits[_msgSender()];
-        IERC20Upgradeable(saleToken).transfer(_msgSender(), amount);
+        IERC20(saleToken).transfer(_msgSender(), amount);
         emit TokensClaimed(_msgSender(), amount, block.timestamp);
         return true;
     }

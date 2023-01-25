@@ -4,22 +4,43 @@ require("@openzeppelin/hardhat-upgrades");
 require("./task/metacade_token.deploy");
 require("./task/presale.deploy");
 require("./task/subtasks");
+require("./task/correctedPresale.deploy");
+require("./task/collectData");
+require("./task/testTasks/USDTStub.deploy");
+require("./task/testTasks/ChainlinkPriceFeedStub.deploy");
+require("./task/testTasks/originalPresale.deploy");
+require("./task/testTasks/betaPresale.deploy");
+require("./task/testTasks/buyTokens");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 
 module.exports = {
-    solidity: "0.8.17",
+    solidity: {
+        compilers: [
+            {
+                version: "0.4.17",
+            },
+            {
+                version: "0.8.17",
+            },
+        ],
+    },
     mocha: {
-        timeout: 5000,
+        timeout: 10000,
     },
     etherscan: {
         apiKey: process.env.ETHERSCAN_API_KEY,
     },
     networks: {
-        hardhat: {},
+        hardhat: {
+            accounts: {
+                accountsBalance: "100000000000000000000000000",
+            },
+        },
         testnet: {
             accounts: [process.env.DEPLOYER_PRIVATE_KEY],
-            url: `https://goerli.infura.io/v3/${process.env.GOERLI_KEY}`,
+            url: `https://endpoints.omniatech.io/v1/eth/goerli/public`,
+            gas: 6000000,
         },
         mainnet: {
             accounts: [process.env.DEPLOYER_PRIVATE_KEY],

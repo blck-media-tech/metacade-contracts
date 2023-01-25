@@ -1,0 +1,20 @@
+{
+  "mainnet": {
+    "betaPresale": "0x5f95fE0Dbd6CBD03AFa160f4d9AEAD9d44cF9ce6",
+    "originalPresale": "0x455866667B9843d622AABF7459Eaad858B55B2D0",
+    "saleToken": "0xed328E9C1179a30ddC1E7595E036AEd8760C22aF",
+    "aggregatorInterface": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+    "USDTInterface": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "startTime": "1669676929",
+    "endTime": "1679097600"
+  },
+  "testnet": {
+    "betaPresale": "0xc8563b8A148C2e00A21220EbBd7aB78F42FFa699",
+    "originalPresale": "0xBA210386197CAC93E21723bB959aC1f811C33aC0",
+    "saleToken": "0x5e704556aF0E3ce5c428D49Ab4aD960e597d2e12",
+    "aggregatorInterface": "0x853684B7C69Ff1f58e9c41F82119d7eFf2D86a7C",
+    "USDTInterface": "0x055A3f3595Bb8DC677b4AbbC438Becc470B634c4",
+    "startTime": "1674497279",
+    "endTime": "1684497279"
+  }
+}
