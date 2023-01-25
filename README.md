@@ -136,26 +136,3 @@ their tokens may win rewards from the project.
 You won't be able to access other P2E games inside the Metacade due to technology constraints. However, there will be
 advertised tournaments and hosted games related to these games. The games built by the community will be 100% available
 in the Metacade.
-
-<style>
-img[alt=Linktr],
-img[alt=TikTok],
-img[alt=Youtube],
-img[alt=Discord],
-img[alt=LinkedIn],
-img[alt=Telegram]{
-margin: 1%;
-width: 14%;
-}
-
-img[alt=Whitepaper],
-img[alt=WebSite],
-img[alt=CertikAudit]{
-margin: 0.8%;
-width: 31%;
-}
-
-img[alt=Banner]{
-width: 100%;
-}
-</style>
