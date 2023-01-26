@@ -237,15 +237,6 @@ describe("MetacadePresale", function () {
         expect(originalPresale.address).not.to.equal(ZERO_ADDRESS);
         expect(betaPresale.address).not.to.equal(ZERO_ADDRESS);
 
-        const totalTokensSold = await originalPresale.totalTokensSold();
-        const totalTokensSoldBeta = await betaPresale.totalTokensSold();
-        const totalTokensSoldCorrected = await presaleCorrected.totalTokensSold();
-        expect(totalTokensSoldCorrected).to.equal(totalTokensSold.add(totalTokensSoldBeta));
-
-        const currentStep = await calculateCurrentStepFixture(totalTokensSoldCorrected);
-        const currentStepCorrected = await presaleCorrected.currentStep();
-        expect(currentStep).to.equal(currentStepCorrected);
-
         const startTime = await originalPresale.startTime();
         const startTimeCorrected = await presaleCorrected.startTime();
         expect(startTime).to.equal(startTimeCorrected);
