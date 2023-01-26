@@ -61,6 +61,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
      * @param _USDTInterface        - Address of USDT token
      * @param _token_amount         - Array of prices for each presale step
      * @param _token_price          - Array of totalTokenSold limit for each step
+     * @param _minimal_amount       - Array of minimal purchase amounts for steps
      * @param _startTime            - Sale start time
      * @param _endTime              - Sale end time
      */
@@ -97,6 +98,10 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         emit SaleTimeSet(_startTime, _endTime, block.timestamp);
     }
 
+
+    /**
+     * @dev To synchronize totalTokensSold with previous presales and calculate current step
+     */
     function sync() external onlyOwner {
         require(!isSynchronized, "Already synchronized");
         totalTokensSold = previousPresale.totalTokensSold() + betaPresale.totalTokensSold();
