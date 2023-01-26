@@ -5,18 +5,18 @@ const stageAmount = [
     "140000000",
     "297500000",
     "455000000",
-    "612500000",
-    "770000000",
-    "927500000",
-    "1085000000",
-    "1242500000",
-    "1400000000",
+    "555000000",
+    "655000000",
+    "755000000",
+    "855000000",
+    "955000000",
+    "1080000000",
 ].map(BigNumber.from);
 
 const stagePrice = [
     "8000000000000000",
     "10000000000000000",
-    "12000000000000000",
+    "10200000000000000",
     "13000000000000000",
     "14000000000000000",
     "15500000000000000",
@@ -24,6 +24,8 @@ const stagePrice = [
     "18500000000000000",
     "20000000000000000",
 ].map(BigNumber.from);
+
+const stageMinimumAmount = ["3750", "3000", "2500", "2310", "2150", "1940", "1770", "1625", "1500"].map(BigNumber.from);
 
 module.exports = {
     testnet: {
@@ -36,6 +38,7 @@ module.exports = {
             USDTInterface: contractsData.testnet.USDTInterface,
             stageAmount,
             stagePrice,
+            stageMinimumAmount,
             startTime: contractsData.testnet.startTime,
             endTime: contractsData.testnet.endTime,
         },
@@ -58,6 +61,7 @@ module.exports = {
             USDTInterface: contractsData.mainnet.USDTInterface,
             stageAmount,
             stagePrice,
+            stageMinimumAmount,
             startTime: contractsData.mainnet.startTime,
             endTime: contractsData.mainnet.endTime,
         },

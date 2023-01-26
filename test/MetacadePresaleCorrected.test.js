@@ -7,18 +7,18 @@ const stageAmount = [
     "140000000",
     "297500000",
     "455000000",
-    "612500000",
-    "770000000",
-    "927500000",
-    "1085000000",
-    "1242500000",
-    "1400000000",
+    "555000000",
+    "655000000",
+    "755000000",
+    "855000000",
+    "955000000",
+    "1080000000",
 ].map(BigNumber.from);
 
 const stagePrice = [
     "8000000000000000",
     "10000000000000000",
-    "12000000000000000",
+    "10200000000000000",
     "13000000000000000",
     "14000000000000000",
     "15500000000000000",
@@ -26,6 +26,8 @@ const stagePrice = [
     "18500000000000000",
     "20000000000000000",
 ].map(BigNumber.from);
+
+const stageMinimumAmount = ["3750", "3000", "2500", "2310", "2150", "1940", "1770", "1625", "1500"].map(BigNumber.from);
 
 describe("MetacadePresale", function () {
     function calculateCurrentStepFixture(totalSoldAmount) {
@@ -141,9 +143,12 @@ describe("MetacadePresale", function () {
                 USDT.address,
                 stageAmount,
                 stagePrice,
+                stageMinimumAmount,
                 startTime,
                 endTime
             );
+
+        await presaleCorrected.connect(creator).sync();
 
         //Transfer presale contract ownership to specified address
         await presaleCorrected.transferOwnership(presaleOwner.address);
@@ -190,6 +195,7 @@ describe("MetacadePresale", function () {
                 USDT.address,
                 stageAmount,
                 stagePrice,
+                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -220,9 +226,12 @@ describe("MetacadePresale", function () {
                 USDT.address,
                 stageAmount,
                 stagePrice,
+                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
+
+        await presaleCorrected.connect(users.creator).sync();
 
         expect(presaleCorrected.address).not.to.equal(ZERO_ADDRESS);
         expect(originalPresale.address).not.to.equal(ZERO_ADDRESS);
@@ -285,6 +294,7 @@ describe("MetacadePresale", function () {
                 USDT.address,
                 stageAmount,
                 stagePrice,
+                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -316,6 +326,7 @@ describe("MetacadePresale", function () {
                 ZERO_ADDRESS,
                 stageAmount,
                 stagePrice,
+                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -347,6 +358,7 @@ describe("MetacadePresale", function () {
                 ZERO_ADDRESS,
                 stageAmount,
                 stagePrice,
+                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -378,6 +390,7 @@ describe("MetacadePresale", function () {
                 ZERO_ADDRESS,
                 stageAmount,
                 stagePrice,
+                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -421,6 +434,112 @@ describe("MetacadePresale", function () {
                 users,
             };
         }
+
+        describe("'sync' function", function () {
+            it("should correctly set totalTokenSold", async function () {
+                const { originalPresale, USDT, token, ChainlinkPriceFeed, saleEndTime, saleStartTime, users } =
+                    await deployOriginalPresaleFixture();
+
+                const betaPresale = await deployBetaPresaleFixture(
+                    token,
+                    ChainlinkPriceFeed,
+                    USDT,
+                    users.creator,
+                    users.presaleOwner
+                );
+
+                const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+                const presaleCorrected = await presaleCorrectedFactory
+                    .connect(users.creator)
+                    .deploy(
+                        originalPresale.address,
+                        betaPresale.address,
+                        token.address,
+                        ChainlinkPriceFeed.address,
+                        USDT.address,
+                        stageAmount,
+                        stagePrice,
+                        stageMinimumAmount,
+                        saleStartTime,
+                        saleEndTime
+                    );
+
+                await presaleCorrected.connect(users.creator).sync();
+
+                const totalTokensSold = await originalPresale.totalTokensSold();
+                const totalTokensSoldBeta = await betaPresale.totalTokensSold();
+                const totalTokensSoldCorrected = await presaleCorrected.totalTokensSold();
+                expect(totalTokensSoldCorrected).to.equal(totalTokensSold.add(totalTokensSoldBeta));
+
+                const currentStep = await calculateCurrentStepFixture(totalTokensSoldCorrected);
+                const currentStepCorrected = await presaleCorrected.currentStep();
+                expect(currentStep).to.equal(currentStepCorrected);
+            });
+
+            it("should revert if called not by the owner", async function () {
+                const { originalPresale, USDT, token, ChainlinkPriceFeed, saleEndTime, saleStartTime, users } =
+                    await deployOriginalPresaleFixture();
+
+                const betaPresale = await deployBetaPresaleFixture(
+                    token,
+                    ChainlinkPriceFeed,
+                    USDT,
+                    users.creator,
+                    users.presaleOwner
+                );
+
+                const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+                const presaleCorrected = await presaleCorrectedFactory.deploy(
+                    originalPresale.address,
+                    betaPresale.address,
+                    token.address,
+                    ChainlinkPriceFeed.address,
+                    USDT.address,
+                    stageAmount,
+                    stagePrice,
+                    stageMinimumAmount,
+                    saleStartTime,
+                    saleEndTime
+                );
+
+                const syncTx = presaleCorrected.connect(users.presaleOwner).sync();
+
+                await expect(syncTx).to.be.revertedWith("Ownable: caller is not the owner");
+            });
+
+            it("should revert if contract already synced", async function () {
+                const { originalPresale, USDT, token, ChainlinkPriceFeed, saleEndTime, saleStartTime, users } =
+                    await deployOriginalPresaleFixture();
+
+                const betaPresale = await deployBetaPresaleFixture(
+                    token,
+                    ChainlinkPriceFeed,
+                    USDT,
+                    users.creator,
+                    users.presaleOwner
+                );
+
+                const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+                const presaleCorrected = await presaleCorrectedFactory.deploy(
+                    originalPresale.address,
+                    betaPresale.address,
+                    token.address,
+                    ChainlinkPriceFeed.address,
+                    USDT.address,
+                    stageAmount,
+                    stagePrice,
+                    stageMinimumAmount,
+                    saleStartTime,
+                    saleEndTime
+                );
+
+                await presaleCorrected.sync();
+
+                const syncTx = presaleCorrected.sync();
+
+                await expect(syncTx).to.be.revertedWith("Already synchronized");
+            });
+        });
 
         describe("'pause' function", function () {
             it("should pause contract if called by the owner", async function () {
@@ -752,7 +871,7 @@ describe("MetacadePresale", function () {
             it("should increase purchased tokens amount and transfer payment to owner", async function () {
                 //Set values
                 const { correctedPresale: presale, saleStartTime, token, users } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -785,7 +904,7 @@ describe("MetacadePresale", function () {
             it("should revert if user blacklisted", async function () {
                 //Set values
                 const { correctedPresale: presale, saleStartTime, users } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -806,7 +925,7 @@ describe("MetacadePresale", function () {
             it("should revert if trying to buy before sales start", async function () {
                 //Set values
                 const { correctedPresale: presale, users } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Get wei price
                 const weiPrice = await presale.ethBuyHelper(tokensToPurchase);
@@ -821,7 +940,7 @@ describe("MetacadePresale", function () {
             it("should revert if not enough value", async function () {
                 //Set values
                 const { correctedPresale: presale, saleStartTime, users } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -858,10 +977,10 @@ describe("MetacadePresale", function () {
                 await expect(buyWithEthTx).to.be.revertedWith("Insufficient funds");
             });
 
-            it("should revert if try to buy 0 tokens", async function () {
+            it("should revert if try to buy less than minimal stage amount", async function () {
                 //Set values
                 const { correctedPresale: presale, saleStartTime, users } = await deployContractsFixture();
-                const tokensToPurchase = 0;
+                const tokensToPurchase = stageAmount[stageAmount.length - 1] - (await presale.totalTokensSold());
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -870,16 +989,16 @@ describe("MetacadePresale", function () {
                 const weiPrice = await presale.ethBuyHelper(tokensToPurchase);
 
                 //Buy with eth
-                const buyWithEthTx = presale.connect(users.creator).buyWithEth(tokensToPurchase, { value: weiPrice });
+                const buyWithEthTx = presale.connect(users.creator).buyWithEth(1, { value: weiPrice });
 
                 //Assert transaction was reverted
-                await expect(buyWithEthTx).to.be.revertedWith("Invalid sale amount");
+                await expect(buyWithEthTx).to.be.revertedWith("Less than step minimum");
             });
 
             it("should emit TokensBought event", async function () {
                 //Set values
                 const { correctedPresale: presale, saleStartTime, users } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -905,7 +1024,7 @@ describe("MetacadePresale", function () {
             it("should increase purchased tokens amount and transfer payment to owner", async function () {
                 //Set values
                 const { correctedPresale: presale, users, saleStartTime, token, USDT } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -941,7 +1060,7 @@ describe("MetacadePresale", function () {
             it("should revert if user blacklisted", async function () {
                 //Set values
                 const { correctedPresale: presale, users, saleStartTime, USDT } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -965,7 +1084,7 @@ describe("MetacadePresale", function () {
             it("should revert if trying to buy before sales start", async function () {
                 //Set values
                 const { correctedPresale: presale, users, USDT } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Get usdt price
                 const USDTPrice = await presale.usdtBuyHelper(tokensToPurchase);
@@ -983,7 +1102,7 @@ describe("MetacadePresale", function () {
             it("should revert if not enough allowance", async function () {
                 //Set values
                 const { correctedPresale: presale, users, saleStartTime } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -1016,10 +1135,10 @@ describe("MetacadePresale", function () {
                 await expect(buyWithUSDTTx).to.be.revertedWith("Insufficient funds");
             });
 
-            it("should revert if try to buy 0 tokens", async function () {
+            it("should revert if try to buy less than stage minimum", async function () {
                 //Set values
                 const { correctedPresale: presale, users, saleStartTime, USDT } = await deployContractsFixture();
-                const tokensToPurchase = 0;
+                const tokensToPurchase = stageAmount[stageAmount.length - 1] - (await presale.totalTokensSold());
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -1031,16 +1150,16 @@ describe("MetacadePresale", function () {
                 await USDT.connect(users.creator).approve(presale.address, USDTPrice);
 
                 //Buy with USDT
-                const buyWithUSDTTx = presale.connect(users.creator).buyWithUSDT(tokensToPurchase);
+                const buyWithUSDTTx = presale.connect(users.creator).buyWithUSDT(tokensToPurchase + 1);
 
                 //Assert transaction was reverted
-                await expect(buyWithUSDTTx).to.be.revertedWith("Invalid sale amount");
+                await expect(buyWithUSDTTx).to.be.revertedWith("Insufficient funds");
             });
 
             it("should emit TokensBought event", async function () {
                 //Set values
                 const { correctedPresale: presale, users, saleStartTime, USDT } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -1073,7 +1192,7 @@ describe("MetacadePresale", function () {
                     saleStartTime,
                     saleEndTime,
                 } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
                 const claimStartTime = saleEndTime + 1;
 
                 //Timeshift to sale period
@@ -1123,7 +1242,7 @@ describe("MetacadePresale", function () {
                     saleStartTime,
                     saleEndTime,
                 } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
                 const claimStartTime = saleEndTime + 1;
 
                 //Timeshift to sale period
@@ -1152,7 +1271,7 @@ describe("MetacadePresale", function () {
             it("should revert if claim start time is not set", async function () {
                 //Set values
                 const { correctedPresale: presale, users, saleStartTime } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
 
                 //Timeshift to sale period
                 await timeTravelFixture(saleStartTime + 1);
@@ -1176,7 +1295,7 @@ describe("MetacadePresale", function () {
                     saleStartTime,
                     saleEndTime,
                 } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
                 const claimStartTime = saleEndTime + 1;
 
                 //Timeshift to sale period
@@ -1211,7 +1330,7 @@ describe("MetacadePresale", function () {
                     saleStartTime,
                     saleEndTime,
                 } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
                 const claimStartTime = saleEndTime + 1;
 
                 //Timeshift to sale period
@@ -1252,7 +1371,7 @@ describe("MetacadePresale", function () {
                     saleStartTime,
                     saleEndTime,
                 } = await deployContractsFixture();
-                const tokensToPurchase = 1000;
+                const tokensToPurchase = 10000;
                 const claimStartTime = saleEndTime + 1;
 
                 //Timeshift to sale period
@@ -1400,6 +1519,7 @@ describe("MetacadePresale", function () {
                     USDT.address,
                     stageAmount,
                     stagePrice,
+                    stageMinimumAmount,
                     saleStartTime,
                     saleEndTime
                 );

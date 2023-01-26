@@ -26,7 +26,9 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
 
     uint256[9] public token_amount;
     uint256[9] public token_price;
+    uint256[9] public minimal_amount;
     uint8 constant maxStepIndex = 8;
+    bool isSynchronized;
 
     IERC20 public USDTInterface;
     IAggregator public aggregatorInterface;
@@ -40,7 +42,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
             block.timestamp >= startTime && block.timestamp <= endTime,
             "Invalid time for buying"
         );
-        require(amount > 0, "Invalid sale amount");
+        require(amount>minimal_amount[currentStep], "Less than step minimum");
         require(amount + totalTokensSold <= token_amount[maxStepIndex], "Insufficient funds");
         _;
     }
@@ -70,6 +72,7 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         address _USDTInterface,
         uint256[9] memory _token_amount,
         uint256[9] memory _token_price,
+        uint256[9] memory _minimal_amount,
         uint256 _startTime,
         uint256 _endTime
     ) {
@@ -82,17 +85,23 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
         );
         previousPresale = IMetacadeOriginal(_previousPresale);
         betaPresale = IMetacadeOriginal(_betaPresale);
-        totalTokensSold = previousPresale.totalTokensSold() + betaPresale.totalTokensSold();
         saleToken = _saleToken;
         aggregatorInterface = IAggregator(_aggregatorInterface);
         USDTInterface = IERC20(_USDTInterface);
         token_amount = _token_amount;
         token_price = _token_price;
+        minimal_amount = _minimal_amount;
         startTime = _startTime;
         endTime = _endTime;
-        currentStep = _getStepByTotalSoldAmount();
 
         emit SaleTimeSet(_startTime, _endTime, block.timestamp);
+    }
+
+    function sync() external onlyOwner {
+        require(!isSynchronized, "Already synchronized");
+        totalTokensSold = previousPresale.totalTokensSold() + betaPresale.totalTokensSold();
+        currentStep = _getStepByTotalSoldAmount();
+        isSynchronized = true;
     }
 
     /**
