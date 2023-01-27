@@ -3,10 +3,8 @@ const CONFIG = require("../arguments.deploy.js");
 const delay = require("../../helpers/helpers");
 const fs = require("fs");
 const path = require("path");
-const contractsData = require("../contractsData.json");
 
 task("deploy:OriginalPresale", "Deploys original metacade presale contract").setAction(async (taskArgs, hre) => {
-    let networkContractsData = contractsData[hre.network.name];
     const { MetacadePresale: OriginalPresaleArguments } = CONFIG[hre.network.name];
 
     await hre.run("clean&compile");
@@ -17,9 +15,9 @@ task("deploy:OriginalPresale", "Deploys original metacade presale contract").set
         contract: "MetacadeOriginal",
     });
 
-    networkContractsData.originalPresale = OriginalPresale.address;
-
-    fs.writeFileSync(path.resolve(__dirname) + "/contractsData.json", JSON.stringify(contractsData, null, 2));
+    const contractsData = require("../contractsData.json");
+    contractsData[hre.network.name].originalPresale = OriginalPresale.address;
+    fs.writeFileSync(path.resolve(__dirname) + "/../contractsData.json", JSON.stringify(contractsData, null, 2));
 
     await delay(60000);
 
