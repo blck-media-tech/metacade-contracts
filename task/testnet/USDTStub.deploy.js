@@ -9,11 +9,11 @@ task("deploy:USDTStub", "Deploys stub USDT token").setAction(async (taskArgs, hr
     const USDTStub = await hre.run("deployment", {
         network: hre.network.name,
         arguments: USDTStubArguments,
-        contract: "USDTStub",
+        contract: "USDT",
     });
 
     await hre.run("verification", {
-        contract: "USDTStub",
+        contract: "USDT",
         address: USDTStub.address,
         constructorArguments: Object.values(USDTStubArguments),
     });

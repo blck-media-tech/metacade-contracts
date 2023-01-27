@@ -9,21 +9,21 @@ task("deploy:BetaPresale", "Deploys beta metacade presale contract").setAction(a
 
     await hre.run("clean&compile");
 
-    const OriginalPresale = await hre.run("deployment", {
+    const MetacadePresaleBeta = await hre.run("deployment", {
         network: hre.network.name,
         arguments: OriginalPresaleArguments,
-        contract: "MetacadeBeta",
+        contract: "MetacadePresaleBeta",
     });
 
     const contractsData = require("../contractsData.json");
-    contractsData[hre.network.name].betaPresale = OriginalPresale.address;
+    contractsData[hre.network.name].betaPresale = MetacadePresaleBeta.address;
     fs.writeFileSync(path.resolve(__dirname) + "/../contractsData.json", JSON.stringify(contractsData, null, 2));
 
     await delay(60000);
 
     await hre.run("verification", {
-        contract: "MetacadeBeta",
-        address: OriginalPresale.address,
+        contract: "MetacadePresaleBeta",
+        address: MetacadePresaleBeta.address,
         constructorArguments: Object.values(OriginalPresaleArguments),
     });
 });

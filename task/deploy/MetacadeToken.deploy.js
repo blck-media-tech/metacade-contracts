@@ -1,5 +1,5 @@
 const { task } = require("hardhat/config");
-const delay = require("../helpers/helpers");
+const delay = require("../../helpers/helpers");
 
 task("deploy:metacade", "Deploys metacade token").setAction(async (taskArgs, hre) => {
     let tokenContractAddress;
@@ -7,14 +7,14 @@ task("deploy:metacade", "Deploys metacade token").setAction(async (taskArgs, hre
         await hre.run("clean&compile");
         console.log("Deploying ...");
 
-        const MCADE_token = await hre.ethers.getContractFactory("Metacade");
-        const mcade_token = await MCADE_token.deploy();
-        await mcade_token.deployed();
+        const MetacadeTokenFactory = await hre.ethers.getContractFactory("MetacadeToken");
+        const MetacadeToken = await MetacadeTokenFactory.deploy();
+        await MetacadeToken.deployed();
 
-        console.log("Metacade token has been deployed to " + mcade_token.address);
-        tokenContractAddress = mcade_token.address;
+        console.log("Metacade token has been deployed to " + MetacadeToken.address);
+        tokenContractAddress = MetacadeToken.address;
     } catch (error) {
-        await hre.run("deploymentError", { error: error, message: error.message, contract: "Metacade" });
+        await hre.run("deploymentError", { error: error, message: error.message, contract: "MetacadeToken" });
         process.exit(1);
     }
 
@@ -22,7 +22,7 @@ task("deploy:metacade", "Deploys metacade token").setAction(async (taskArgs, hre
     await delay(60000);
 
     await hre.run("verification", {
-        contract: "Metacade",
+        contract: "MetacadeToken",
         address: tokenContractAddress,
         constructorArguments: Object.values(taskArgs),
     });

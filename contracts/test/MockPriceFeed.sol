@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-contract ChainlinkPriceFeedStub {
+contract MockPriceFeed {
     function latestRoundData()
     external
     view

@@ -6,16 +6,16 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../interfaces/IMetacadeOriginal.sol";
+import "../interfaces/v1/IMetacadePresale.v1.sol";
+import "../interfaces/v2/IMetacadePresale.v2.sol";
 import "../interfaces/IAggregator.sol";
-import "../interfaces/IMetacadePresale.sol";
 
-contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard {
+contract MetacadePresaleV2 is IMetacadePresaleV2, Pausable, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     
     address public immutable saleToken;
-    IMetacadeOriginal public immutable previousPresale;
-    IMetacadeOriginal public immutable betaPresale;
+    IMetacadePresaleV1 public immutable previousPresale;
+    IMetacadePresaleV1 public immutable betaPresale;
 
     uint256 public totalTokensSold;
     uint256 public startTime;
@@ -83,8 +83,8 @@ contract MetacadePresale is IMetacadePresale, Pausable, Ownable, ReentrancyGuard
             _endTime > _startTime,
             "Invalid time"
         );
-        previousPresale = IMetacadeOriginal(_previousPresale);
-        betaPresale = IMetacadeOriginal(_betaPresale);
+        previousPresale = IMetacadePresaleV1(_previousPresale);
+        betaPresale = IMetacadePresaleV1(_betaPresale);
         saleToken = _saleToken;
         aggregatorInterface = IAggregator(_aggregatorInterface);
         USDTInterface = IERC20(_USDTInterface);

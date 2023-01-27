@@ -38,17 +38,17 @@ describe("MetacadePresale", function () {
     }
 
     async function deployTokenFixture(creator) {
-        const tokenFactory = await hre.ethers.getContractFactory("Metacade");
+        const tokenFactory = await hre.ethers.getContractFactory("MetacadeToken");
         return await tokenFactory.connect(creator).deploy();
     }
 
     async function deployUSDTStubFixture(creator) {
-        const USDTFactory = await hre.ethers.getContractFactory("USDTStub");
+        const USDTFactory = await hre.ethers.getContractFactory("USDT");
         return await USDTFactory.connect(creator).deploy(1000000000000000, "Tether USD", "USDT", 6);
     }
 
     async function deployChainlinkPriceFeedStubFixture(creator) {
-        const ChainlinkPriceFeedFactory = await hre.ethers.getContractFactory("ChainlinkPriceFeedStub");
+        const ChainlinkPriceFeedFactory = await hre.ethers.getContractFactory("MockPriceFeed");
         return await ChainlinkPriceFeedFactory.connect(creator).deploy();
     }
 
@@ -66,7 +66,7 @@ describe("MetacadePresale", function () {
         const ChainlinkPriceFeed = await deployChainlinkPriceFeedStubFixture(creator);
 
         //Deploy presale contract
-        const presaleFactory = await hre.ethers.getContractFactory("MetacadeOriginal");
+        const presaleFactory = await hre.ethers.getContractFactory("MetacadePresaleV1");
         const presale = await presaleFactory.connect(creator).deploy(token.address);
 
         await presale.connect(creator).initialize(ChainlinkPriceFeed.address, USDT.address, saleStartTime, saleEndTime);
@@ -96,7 +96,7 @@ describe("MetacadePresale", function () {
         const saleEndTime = saleStartTime + DAY_IN_SECONDS;
 
         //Deploy presale contract
-        const presaleFactory = await hre.ethers.getContractFactory("MetacadeOriginal");
+        const presaleFactory = await hre.ethers.getContractFactory("MetacadePresaleV1");
         const presale = await presaleFactory.connect(creator).deploy(token.address);
 
         await presale.connect(creator).initialize(ChainlinkPriceFeed.address, USDT.address, saleStartTime, saleEndTime);
@@ -132,7 +132,7 @@ describe("MetacadePresale", function () {
         const endTime = await originalPresale.endTime();
 
         //Deploy presale contract
-        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
         const presaleCorrected = await presaleCorrectedFactory
             .connect(creator)
             .deploy(
@@ -184,7 +184,7 @@ describe("MetacadePresale", function () {
             users.presaleOwner
         );
 
-        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
         const presaleCorrected = await presaleCorrectedFactory
             .connect(users.creator)
             .deploy(
@@ -215,7 +215,7 @@ describe("MetacadePresale", function () {
             users.presaleOwner
         );
 
-        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
         const presaleCorrected = await presaleCorrectedFactory
             .connect(users.creator)
             .deploy(
@@ -274,7 +274,7 @@ describe("MetacadePresale", function () {
             users.presaleOwner
         );
 
-        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
         const presaleCorrectedTx = presaleCorrectedFactory
             .connect(users.creator)
             .deploy(
@@ -306,7 +306,7 @@ describe("MetacadePresale", function () {
             users.presaleOwner
         );
 
-        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
         const presaleCorrectedTx = presaleCorrectedFactory
             .connect(users.creator)
             .deploy(
@@ -338,7 +338,7 @@ describe("MetacadePresale", function () {
             users.presaleOwner
         );
 
-        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
         const presaleCorrectedTx = presaleCorrectedFactory
             .connect(users.creator)
             .deploy(
@@ -370,7 +370,7 @@ describe("MetacadePresale", function () {
             users.presaleOwner
         );
 
-        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+        const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
         const presaleCorrectedTx = presaleCorrectedFactory
             .connect(users.creator)
             .deploy(
@@ -439,7 +439,7 @@ describe("MetacadePresale", function () {
                     users.presaleOwner
                 );
 
-                const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+                const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
                 const presaleCorrected = await presaleCorrectedFactory
                     .connect(users.creator)
                     .deploy(
@@ -479,7 +479,7 @@ describe("MetacadePresale", function () {
                     users.presaleOwner
                 );
 
-                const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+                const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
                 const presaleCorrected = await presaleCorrectedFactory.deploy(
                     originalPresale.address,
                     betaPresale.address,
@@ -510,7 +510,7 @@ describe("MetacadePresale", function () {
                     users.presaleOwner
                 );
 
-                const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+                const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
                 const presaleCorrected = await presaleCorrectedFactory.deploy(
                     originalPresale.address,
                     betaPresale.address,
@@ -1499,7 +1499,7 @@ describe("MetacadePresale", function () {
                 users.presaleOwner
             );
 
-            const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresale");
+            const presaleCorrectedFactory = await hre.ethers.getContractFactory("MetacadePresaleV2");
             const presaleCorrected = await presaleCorrectedFactory
                 .connect(users.creator)
                 .deploy(

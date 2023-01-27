@@ -4,16 +4,15 @@ require("@openzeppelin/hardhat-upgrades");
 require("hardhat-abi-exporter");
 require("hardhat-gas-reporter");
 
-require("./task/metacade_token.deploy");
-require("./task/presale.deploy");
 require("./task/subtasks");
-require("./task/correctedPresale.deploy");
 require("./task/collectData");
-require("./task/testTasks/USDTStub.deploy");
-require("./task/testTasks/ChainlinkPriceFeedStub.deploy");
-require("./task/testTasks/originalPresale.deploy");
-require("./task/testTasks/betaPresale.deploy");
-require("./task/testTasks/buyTokens");
+require("./task/deploy/MetacadeToken.deploy");
+require("./task/deploy/MetacadePresale.v2.deploy");
+require("./task/testnet/USDTStub.deploy");
+require("./task/testnet/MockPriceFeed.deploy");
+require("./task/testnet/MetacadePresale.v1.deploy");
+require("./task/testnet/MetacadePresale.beta.deploy");
+require("./task/testnet/buyTokens");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 
