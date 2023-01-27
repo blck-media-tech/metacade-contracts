@@ -1,6 +1,9 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 require("@openzeppelin/hardhat-upgrades");
+require("hardhat-abi-exporter");
+require("hardhat-gas-reporter");
+
 require("./task/metacade_token.deploy");
 require("./task/presale.deploy");
 require("./task/subtasks");
@@ -18,10 +21,16 @@ module.exports = {
     solidity: {
         compilers: [
             {
-                version: "0.4.17",
+                version: "0.8.17",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
             },
             {
-                version: "0.8.17",
+                version: "0.4.17",
             },
         ],
     },
@@ -47,4 +56,26 @@ module.exports = {
             url: "https://eth.llamarpc.com",
         },
     },
+    gasReporter: {
+        enabled: !!process.env.REPORT_GAS,
+        noColors: false,
+        showTimeSpent: true,
+    },
+    abiExporter: [
+        {
+            clear: true,
+            path: "./abi/json",
+            format: "json",
+        },
+        {
+            clear: true,
+            path: "./abi/minimal",
+            format: "minimal",
+        },
+        {
+            clear: true,
+            path: "./abi/fullName",
+            format: "fullName",
+        },
+    ],
 };
