@@ -10,7 +10,7 @@ const stageAmount = [
     "755000000",
     "855000000",
     "955000000",
-    "1080000000",
+    "1155000000",
 ].map(BigNumber.from);
 
 const stagePrice = [
