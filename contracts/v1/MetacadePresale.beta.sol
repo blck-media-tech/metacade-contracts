@@ -21,7 +21,7 @@ interface Aggregator {
     );
 }
 
-contract MetacadeOriginal is
+contract MetacadePresaleBeta is
 Initializable,
 ReentrancyGuard,
 Ownable,
@@ -40,8 +40,7 @@ Pausable
     Aggregator public aggregatorInterface;
     // https://docs.chain.link/docs/ethereum-addresses/ => (ETH / USD)
 
-    uint256[8] public token_amount;
-    uint256[8] public token_price;
+    uint256 public token_price = 8_000_000_000_000_000;
 
     mapping(address => uint256) public userDeposits;
     mapping(address => bool) public hasClaimed;
@@ -106,27 +105,7 @@ Pausable
 //            "Invalid time"
 //        );
         baseDecimals = (10**18);
-        token_amount = [
-        157_500_000,
-        315_000_000,
-        472_500_000,
-        630_000_000,
-        787_500_000,
-        945_000_000,
-        1_102_500_000,
-        1_260_000_000
 
-        ];
-        token_price = [
-        10_000_000_000_000_000,
-        12_000_000_000_000_000,
-        13_000_000_000_000_000,
-        14_000_000_000_000_000,
-        15_500_000_000_000_000,
-        17_000_000_000_000_000,
-        18_500_000_000_000_000,
-        20_000_000_000_000_000
-        ];
         aggregatorInterface = Aggregator(_oracle);
         USDTInterface = IERC20(_usdt);
         startTime = _startTime;
@@ -158,16 +137,7 @@ Pausable
     returns (uint256)
     {
         uint256 USDTAmount;
-        if (_amount + totalTokensSold > token_amount[currentStep]) {
-            require(currentStep < 7, "Insufficient token amount.");
-            uint256 tokenAmountForCurrentPrice = token_amount[currentStep] -
-            totalTokensSold;
-            USDTAmount =
-            tokenAmountForCurrentPrice *
-            token_price[currentStep] +
-            (_amount - tokenAmountForCurrentPrice) *
-            token_price[currentStep + 1];
-        } else USDTAmount = _amount * token_price[currentStep];
+        USDTAmount = _amount * token_price;
         return USDTAmount;
     }
 
@@ -236,11 +206,11 @@ Pausable
     whenNotPaused
     returns (bool)
     {
-        require(amount < 157_500_000, "Can't buy more than 157_500_000 tokens ");
+        require(amount + totalTokensSold <= 140_000_000, "Exceeds Beta Stage");
         uint256 usdPrice = calculatePrice(amount);
         usdPrice = usdPrice / (10**12);
         totalTokensSold += amount;
-        if (totalTokensSold > token_amount[currentStep]) currentStep += 1;
+
         userDeposits[_msgSender()] += (amount * baseDecimals);
         uint256 ourAllowance = USDTInterface.allowance(
             _msgSender(),
@@ -278,13 +248,13 @@ Pausable
     nonReentrant
     returns (bool)
     {
-        require(amount < 157_500_000, "Can't buy more than 157_500_000 tokens ");
+        require(amount + totalTokensSold <= 140_000_000, "Exceeds Beta Stage");
         uint256 usdPrice = calculatePrice(amount);
         uint256 ethAmount = (usdPrice * baseDecimals) / getLatestPrice();
         require(msg.value >= ethAmount, "Less payment");
         uint256 excess = msg.value - ethAmount;
         totalTokensSold += amount;
-        if (totalTokensSold > token_amount[currentStep]) currentStep += 1;
+
         userDeposits[_msgSender()] += (amount * baseDecimals);
         sendValue(payable(owner()), ethAmount);
         if (excess > 0) sendValue(payable(_msgSender()), excess);
@@ -335,6 +305,7 @@ Pausable
      * @param _claimStart claim start time
      * @param noOfTokens no of tokens to add to the contract
      */
+
     function startClaim(
         uint256 _claimStart,
         uint256 noOfTokens
@@ -380,6 +351,7 @@ Pausable
      * @dev To claim tokens after claiming starts
      */
     function claim() external whenNotPaused returns (bool) {
+        require(saleToken != address(0), "Sale token not added");
         require(block.timestamp >= claimStart, "Claim has not started yet");
         require(!hasClaimed[_msgSender()], "Already claimed");
         hasClaimed[_msgSender()] = true;
@@ -389,15 +361,5 @@ Pausable
         IERC20(saleToken).transfer(_msgSender(), amount);
         emit TokensClaimed(_msgSender(), amount, block.timestamp);
         return true;
-    }
-
-    /**
-    * @dev To change endTime after sale starts
-     * @param _newEndtime new sale end time
-     */
-    function setEndTime(uint256 _newEndtime) external onlyOwner{
-        require(startTime > 0, "Sale not started yet");
-        require(_newEndtime > block.timestamp, "Endtime must be in the future");
-        endTime = _newEndtime;
     }
 }

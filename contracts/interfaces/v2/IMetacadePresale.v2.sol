@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-interface IMetacadePresale {
+interface IMetacadePresaleV2 {
     event SaleTimeSet(uint256 _start, uint256 _end, uint256 timestamp);
 
     event TokensBought(
