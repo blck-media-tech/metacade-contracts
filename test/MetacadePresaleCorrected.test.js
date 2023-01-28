@@ -27,8 +27,6 @@ const stagePrice = [
     "20000000000000000",
 ].map(BigNumber.from);
 
-const stageMinimumAmount = ["3750", "3000", "2500", "2310", "2150", "1940", "1770", "1625", "1500"].map(BigNumber.from);
-
 describe("MetacadePresale", function () {
     function calculateCurrentStepFixture(totalSoldAmount) {
         if (totalSoldAmount < stageAmount[0]) return 0;
@@ -143,7 +141,6 @@ describe("MetacadePresale", function () {
                 USDT.address,
                 stageAmount,
                 stagePrice,
-                stageMinimumAmount,
                 startTime,
                 endTime
             );
@@ -195,7 +192,6 @@ describe("MetacadePresale", function () {
                 USDT.address,
                 stageAmount,
                 stagePrice,
-                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -226,7 +222,6 @@ describe("MetacadePresale", function () {
                 USDT.address,
                 stageAmount,
                 stagePrice,
-                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -285,7 +280,6 @@ describe("MetacadePresale", function () {
                 USDT.address,
                 stageAmount,
                 stagePrice,
-                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -317,7 +311,6 @@ describe("MetacadePresale", function () {
                 ZERO_ADDRESS,
                 stageAmount,
                 stagePrice,
-                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -349,7 +342,6 @@ describe("MetacadePresale", function () {
                 ZERO_ADDRESS,
                 stageAmount,
                 stagePrice,
-                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -381,7 +373,6 @@ describe("MetacadePresale", function () {
                 ZERO_ADDRESS,
                 stageAmount,
                 stagePrice,
-                stageMinimumAmount,
                 saleStartTime,
                 saleEndTime
             );
@@ -450,7 +441,6 @@ describe("MetacadePresale", function () {
                         USDT.address,
                         stageAmount,
                         stagePrice,
-                        stageMinimumAmount,
                         saleStartTime,
                         saleEndTime
                     );
@@ -488,7 +478,6 @@ describe("MetacadePresale", function () {
                     USDT.address,
                     stageAmount,
                     stagePrice,
-                    stageMinimumAmount,
                     saleStartTime,
                     saleEndTime
                 );
@@ -519,7 +508,6 @@ describe("MetacadePresale", function () {
                     USDT.address,
                     stageAmount,
                     stagePrice,
-                    stageMinimumAmount,
                     saleStartTime,
                     saleEndTime
                 );
@@ -968,7 +956,7 @@ describe("MetacadePresale", function () {
                 await expect(buyWithEthTx).to.be.revertedWith("Insufficient funds");
             });
 
-            it("should revert if try to buy less than minimal stage amount", async function () {
+            it("should revert if try to buy 0 tokens", async function () {
                 //Set values
                 const { correctedPresale: presale, saleStartTime, users } = await deployContractsFixture();
                 const tokensToPurchase = stageAmount[stageAmount.length - 1] - (await presale.totalTokensSold());
@@ -980,10 +968,10 @@ describe("MetacadePresale", function () {
                 const weiPrice = await presale.ethBuyHelper(tokensToPurchase);
 
                 //Buy with eth
-                const buyWithEthTx = presale.connect(users.creator).buyWithEth(1, { value: weiPrice });
+                const buyWithEthTx = presale.connect(users.creator).buyWithEth(0, { value: weiPrice });
 
                 //Assert transaction was reverted
-                await expect(buyWithEthTx).to.be.revertedWith("Less than step minimum");
+                await expect(buyWithEthTx).to.be.revertedWith("Invalid sale amount");
             });
 
             it("should emit TokensBought event", async function () {
@@ -1126,7 +1114,7 @@ describe("MetacadePresale", function () {
                 await expect(buyWithUSDTTx).to.be.revertedWith("Insufficient funds");
             });
 
-            it("should revert if try to buy less than stage minimum", async function () {
+            it("should revert if try to buy 0 tokens", async function () {
                 //Set values
                 const { correctedPresale: presale, users, saleStartTime, USDT } = await deployContractsFixture();
                 const tokensToPurchase = stageAmount[stageAmount.length - 1] - (await presale.totalTokensSold());
@@ -1141,10 +1129,10 @@ describe("MetacadePresale", function () {
                 await USDT.connect(users.creator).approve(presale.address, USDTPrice);
 
                 //Buy with USDT
-                const buyWithUSDTTx = presale.connect(users.creator).buyWithUSDT(tokensToPurchase + 1);
+                const buyWithUSDTTx = presale.connect(users.creator).buyWithUSDT(0);
 
                 //Assert transaction was reverted
-                await expect(buyWithUSDTTx).to.be.revertedWith("Insufficient funds");
+                await expect(buyWithUSDTTx).to.be.revertedWith("Invalid sale amount");
             });
 
             it("should emit TokensBought event", async function () {
@@ -1510,7 +1498,6 @@ describe("MetacadePresale", function () {
                     USDT.address,
                     stageAmount,
                     stagePrice,
-                    stageMinimumAmount,
                     saleStartTime,
                     saleEndTime
                 );

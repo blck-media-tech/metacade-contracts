@@ -25,7 +25,6 @@ contract MetacadePresaleV2 is IMetacadePresaleV2, Pausable, Ownable, ReentrancyG
 
     uint256[9] public token_amount;
     uint256[9] public token_price;
-    uint256[9] public minimal_amount;
     uint8 constant maxStepIndex = 8;
     bool isSynchronized;
 
@@ -41,7 +40,7 @@ contract MetacadePresaleV2 is IMetacadePresaleV2, Pausable, Ownable, ReentrancyG
             block.timestamp >= startTime && block.timestamp <= endTime,
             "Invalid time for buying"
         );
-        require(amount>minimal_amount[currentStep], "Less than step minimum");
+        require(amount > 0, "Invalid sale amount");
         require(amount + totalTokensSold <= token_amount[maxStepIndex], "Insufficient funds");
         _;
     }
@@ -60,7 +59,6 @@ contract MetacadePresaleV2 is IMetacadePresaleV2, Pausable, Ownable, ReentrancyG
      * @param _USDTInterface        - Address of USDT token
      * @param _token_amount         - Array of prices for each presale step
      * @param _token_price          - Array of totalTokenSold limit for each step
-     * @param _minimal_amount       - Array of minimal purchase amounts for steps
      * @param _startTime            - Sale start time
      * @param _endTime              - Sale end time
      */
@@ -72,7 +70,6 @@ contract MetacadePresaleV2 is IMetacadePresaleV2, Pausable, Ownable, ReentrancyG
         address _USDTInterface,
         uint256[9] memory _token_amount,
         uint256[9] memory _token_price,
-        uint256[9] memory _minimal_amount,
         uint256 _startTime,
         uint256 _endTime
     ) {
@@ -90,7 +87,6 @@ contract MetacadePresaleV2 is IMetacadePresaleV2, Pausable, Ownable, ReentrancyG
         USDTInterface = IERC20(_USDTInterface);
         token_amount = _token_amount;
         token_price = _token_price;
-        minimal_amount = _minimal_amount;
         startTime = _startTime;
         endTime = _endTime;
 
