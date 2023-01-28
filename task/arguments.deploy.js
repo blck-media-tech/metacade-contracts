@@ -25,8 +25,6 @@ const stagePrice = [
     "20000000000000000",
 ].map(BigNumber.from);
 
-const stageMinimumAmount = ["3750", "3000", "2500", "2310", "2150", "1940", "1770", "1625", "1500"].map(BigNumber.from);
-
 module.exports = {
     testnet: {
         Metacade: {},
@@ -38,7 +36,6 @@ module.exports = {
             USDTInterface: contractsData.testnet.USDTInterface,
             stageAmount,
             stagePrice,
-            stageMinimumAmount,
             startTime: contractsData.testnet.startTime,
             endTime: contractsData.testnet.endTime,
         },
@@ -61,7 +58,6 @@ module.exports = {
             USDTInterface: contractsData.mainnet.USDTInterface,
             stageAmount,
             stagePrice,
-            stageMinimumAmount,
             startTime: contractsData.mainnet.startTime,
             endTime: contractsData.mainnet.endTime,
         },
